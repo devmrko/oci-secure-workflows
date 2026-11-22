@@ -34,6 +34,21 @@ sh scripts/workflow.sh doctor
 
 `OCI_ACCESS_CONFIG`로 다른 설정 파일을 선택할 수 있습니다. `PYTHON_BIN`으로 Python 실행 파일을 지정할 수도 있습니다. 셸 도구는 현재 디렉터리와 무관하게 저장소 내부 스크립트를 찾으며 설정·키 내용은 명령에 삽입하지 않습니다.
 
+### 어떤 값을 바꾸나요
+
+예제 주소와 이름은 사용자의 실제 환경으로 바꿔야 합니다. 전체 서비스를 설치할 필요는 없고 선택한 방법의 항목만 준비합니다.
+
+| 설정 | 예제 | 바꿀 값 |
+|---|---|---|
+| `profile` | `DEFAULT` | 실제 OCI 테넌시에 인증된 CLI 프로파일 이름 |
+| `regions.REGION.bastion_id` | `ocid1.bastion...REPLACE` | 대상 VCN의 Bastion OCID |
+| `public_key`, `private_key` | `~/.ssh/oci-bastion...` | Bastion 세션 인증에 쓸 한 쌍의 로컬 키 경로 |
+| `targets.dev-web.host`, `port` | `10.0.1.10`, `8080` | 웹앱이 실제 실행 중인 사설 IP와 포트 |
+| `targets.dev-ssh.user`, `identity_file` | `opc`, `~/.ssh/oci-vm` | VM 로그인 사용자와 해당 VM의 SSH 키 |
+| `local_port` | `8080` 또는 `2222` | PC에서 비어 있는 포트. 이후 앱이 이 포트에 접속 |
+
+PC의 `127.0.0.1`과 VM의 `127.0.0.1`은 서로 다른 컴퓨터입니다. Bastion에서 VM의 사설 주소로 연결하려면 웹앱이 해당 인터페이스에서 요청을 받을 수 있어야 합니다. 접속 확인은 가능하면 단순한 IP·포트부터 시작하고, 도메인·TLS·로그인 순서로 확장합니다.
+
 ## 고정 포트 포워딩
 
 본인의 개발 웹 화면 하나를 열 때 사용합니다. [Bastion 준비](bastion.md)를 완료하고 target이 실제 VM과 포트를 가리키는지 확인합니다.
@@ -112,7 +127,7 @@ sh scripts/workflow.sh tailscale connect --execute
 sh scripts/workflow.sh tailscale status --execute
 ```
 
-서버에도 클라이언트를 설치한 단순 구성은 status에 나오는 **Tailscale IP 또는 이름**으로 SSH·웹에 접속합니다. OCI의 `10.x` 주소가 자동으로 라우팅되는 것은 아닙니다.
+서버에도 클라이언트를 설치한 단순 구성은 status에 나오는 **Tailscale IP 또는 이름**으로 SSH·웹에 접속합니다. OCI의 `10.x` 주소가 자동으로 라우팅되는 것은 아닙니다. 웹앱이 Tailscale 인터페이스의 연결도 받을 수 있는지와 서버 방화벽을 확인합니다. IP를 얻었다고 사설 IP에만 바인딩된 서비스가 자동으로 연결되지는 않습니다.
 
 여러 사설 서비스에 원래 IP로 접근하려면 OCI 안에 subnet router를 둡니다. 다음 순서로 구성합니다.
 
@@ -141,13 +156,28 @@ sh scripts/workflow.sh tailscale accept-routes --execute
 
 사용자가 브라우저 로그인 후 웹 URL로 접속하도록 할 때 선택합니다. 서버의 `cloudflared`가 외부로 연결하고 Cloudflare Access가 사용자 인증을 담당합니다. OCI 서버에는 필요한 외부 통신 경로가 있어야 합니다.
 
-이 도우미는 **로컬 관리 named tunnel**용입니다. Dashboard에서 토큰으로 관리하는 remote tunnel과 설정 방식을 섞지 않습니다. 계정·도메인·터널 생성은 [공식 절차](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/configuration-file/)에 따라 먼저 준비합니다. `cloudflared`와 터널별 credentials JSON은 해당 서버에 둡니다.
+이 도우미는 **로컬 관리 named tunnel**용입니다. Dashboard에서 토큰으로 관리하는 remote tunnel과 설정 방식을 섞지 않습니다. 계정에 도메인을 연결하고 cloudflared를 설치한 뒤 [로컬 터널 생성 절차](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/create-local-tunnel/)에 따라 준비합니다. 이미 같은 터널이 있으면 새로 만들지 않고 기존 UUID와 credentials를 사용합니다.
+
+아래는 **실제 계정 인증과 터널 생성 명령**입니다. 본 도구의 미리보기와 달리 즉시 공식 CLI를 실행합니다. 이 저장소의 테스트에서는 실행하지 않았습니다.
+
+```sh
+cloudflared tunnel login
+cloudflared tunnel create dev-app
+```
+
+생성 결과의 UUID와 credentials JSON 경로를 기록합니다. 터널 생성만으로 웹앱과 연결되거나 Access 인증이 설정되지는 않습니다. `cloudflared`를 실행할 서버에 터널별 credentials JSON을 안전하게 배치하고 다음 예제를 복사합니다.
 
 ```sh
 cp config/cloudflared.example.yml config/cloudflared.yml
 ```
 
 파일의 `tunnel`, `credentials-file`, `hostname`, `service`를 실제 값으로 바꿉니다. credentials JSON은 저장소 밖의 제한된 경로에 보관합니다. 이 파일의 ingress는 어느 URL을 어느 서버로 전달할지만 지정하며 **Access 사용자 인증 정책을 만들지 않습니다.** Access 애플리케이션과 허용 사용자 정책을 먼저 설정하고 DNS를 연결해야 합니다.
+
+Cloudflare Zero Trust에서 해당 hostname의 self-hosted Access 애플리케이션과 허용 대상을 구성합니다. [Access 웹 접근 안내](https://developers.cloudflare.com/cloudflare-one/setup/secure-private-apps/private-web-app/)를 따라 먼저 보호 정책을 준비한 뒤, 해당 도메인을 관리할 권한이 있는 환경에서 DNS를 연결합니다. 아래 명령은 **실제 CNAME 레코드를 생성**합니다. `app.example.com`은 본인 도메인으로 바꿉니다.
+
+```sh
+cloudflared tunnel route dns dev-app app.example.com
+```
 
 ```sh
 # 로컬 설정 검사. --execute 전에는 명령만 표시합니다.
@@ -162,6 +192,20 @@ sh scripts/workflow.sh cloudflare run --config config/cloudflared.yml --tunnel d
 실행 중인 터널은 `Ctrl+C`로 종료합니다. 운영 서비스로 계속 사용할 경우 승인된 서비스 관리자·재시작·모니터링 구성을 별도로 정합니다. 도우미는 자동 service install을 하지 않습니다.
 
 공식 cloudflared로 예제 ingress 문법·호스트 매칭·404 규칙을 실제 검사했습니다. 계정 인증·외부 터널 연결·Access 정책·DNS는 시험하지 않았습니다. [Cloudflare 구성 원리](https://developers.cloudflare.com/cloudflare-one/setup/secure-private-apps/private-web-app/)
+
+## 성공 여부와 막힌 위치 확인
+
+미리보기에 명령이 출력되거나 도구의 상태가 Online이라고 나오는 것과 실제 서비스 이용 성공은 구분합니다.
+
+| 방법 | 실제 성공 판단 | 먼저 확인할 실패 원인 |
+|---|---|---|
+| 고정 포워딩 | 로컬 포트로 접속해 대상 웹·SSH·DB의 예상 응답 확인 | 로컬 포트 충돌, Bastion allowlist, 대상 포트·서비스 listen 주소 |
+| SOCKS5 | 프록시를 지정한 앱에서 사설 URL의 예상 응답 확인 | 앱 프록시 미설정, 우회 목록, 사설 DNS |
+| sshuttle | 선택한 사설 대역의 서비스에 앱 프록시 없이 연결, 종료 후 기존 경로 복구 | 터널 선행 실행, VM의 Python, 로컬 방화벽 권한, 대역 충돌 |
+| Tailscale | 허용한 계정과 기기에서 서비스 연결, 허용하지 않은 대상은 거부 | 기기 등록, 서비스 바인딩, 경로 승인과 수신, 별도 접근 정책 |
+| Cloudflare | 실제 hostname에서 Access 로그인 후 웹 이용, 비허용 사용자는 차단 | 터널 상태, DNS, Access hostname·허용 정책, backend 접근 |
+
+HTTP 401·403은 서버까지 도달했어도 서비스 인증이 남아 있다는 신호일 수 있습니다. timeout·연결 거부·DNS 오류와 같은 원인으로 취급하지 마십시오. 도구가 실행됐다는 사실만으로 정책 준수나 사용자 인증까지 완료됐다고 판단하지 않습니다.
 
 ## 회사 VPN과 서비스용 LB
 
