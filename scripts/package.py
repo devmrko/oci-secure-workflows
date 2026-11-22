@@ -12,7 +12,7 @@ def source_files(root=ROOT):
         if not p.is_file() or p.is_symlink() or any(v.startswith(".") or v == "__pycache__" for v in rel.parts[:-1]):
             continue
         if rel.parts[0] == "config":
-            allowed = p.name.endswith(".example.json")
+            allowed = p.name.endswith((".example.json", ".example.yml"))
         elif rel.parts[0] == "terraform":
             allowed = p.name.endswith((".tf", ".tftest.hcl", ".example.tfvars")) or p.name == ".terraform.lock.hcl"
         elif rel.parts[0] in ("docs", "scripts", "tests"):

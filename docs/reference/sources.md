@@ -30,6 +30,12 @@
 - [Firefox 연결 설정](https://support.mozilla.org/en-US/kb/connection-settings-firefox): 브라우저 수동 프록시와 프록시 우회 목록. 메뉴 위치는 버전별로 달라질 수 있음.
 - [curl 공식 매뉴얼](https://curl.se/docs/manpage.html): SOCKS5 프록시와 `socks5h`의 이름 조회 방식.
 
+## 추가 접속 클라이언트
+
+- [sshuttle 2.0.0 사용법](https://sshuttle.readthedocs.io/en/stable/usage.html), [옵션](https://sshuttle.readthedocs.io/en/stable/manpage.html), [요구사항](https://sshuttle.readthedocs.io/en/stable/requirements.html): SSH 목적지·CIDR·DNS·원격 Python과 로컬 방화벽 요구. 실제 패키지의 parser로 생성 명령을 확인했습니다.
+- [Tailscale subnet router](https://tailscale.com/docs/features/subnet-routers): IP forwarding, 경로 광고와 승인, access rule·클라이언트 route 수신 구분. 실제 계정 연결은 수행하지 않았습니다.
+- [Cloudflare 사용자 인증 웹 접근](https://developers.cloudflare.com/cloudflare-one/setup/secure-private-apps/private-web-app/), [로컬 named tunnel 설정](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/configuration-file/): Tunnel과 Access의 역할 구분, ingress와 마지막 catch-all 규칙. 공식 cloudflared 2026.11.1로 로컬 설정과 URL 매칭을 검사했습니다.
+
 ## Terraform resource 계약
 
 [Bastion](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/bastion_bastion.html) · [LB listener](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/load_balancer_listener.html) · [LB backend set](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/load_balancer_backend_set.html) · [NSG rule](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/core_network_security_group_security_rule.html) · [API Gateway](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/apigateway_gateway.html) · [API deployment](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/apigateway_deployment.html) · [NAT Gateway](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/core_nat_gateway.html).

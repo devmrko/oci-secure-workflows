@@ -1,0 +1,8 @@
+# Locally managed named tunnel. Replace all placeholders before execution.
+tunnel: REPLACE_TUNNEL_UUID
+credentials-file: /absolute/path/to/REPLACE_TUNNEL_UUID.json
+ingress:
+  - hostname: app.example.com
+    service: http://10.0.1.10:8080
+  - service: http_status:404
+# Configure Cloudflare Access policy and DNS separately before routing users here.

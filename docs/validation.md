@@ -6,7 +6,11 @@
 
 | 범위 | 결과 |
 |---|---|
-| Python unittest | 18개 통과. 미리보기 무호출, CLI별 TTL 옵션, loopback, 서버 응답의 명령문 미실행, 세션 상태·실패·타임아웃, NSG 병합·ETag, 저장 계획 적용·실패 시 오래된 계획 격리, 패키지 민감 파일 제외 |
+| Python unittest | 35개 통과, skip 없음. 기존 18개에 sshuttle 계획 7개, 추가 클라이언트·셸 연결 7개, 실제 cloudflared 설정 계약 3개 포함 |
+| 셸 진입점 | 미리보기 시 외부 프로그램 미실행, --execute 시 전달 인자·오류 코드, 다른 작업 디렉터리와 공백 경로를 실제 하위 프로세스로 검증. 외부 네트워크 클라이언트 실행은 기록용 대체 프로그램 사용 |
+| sshuttle 2.0.0 | 실제 패키지의 옵션 파서로 remote·CIDR·DNS 옵션 확인. 실제 방화벽·트래픽 시험과 별개 |
+| OpenSSH | 생성된 SSH 옵션을 실제 `ssh -G`로 해석, localhost 포트·host key alias 확인. 네트워크 접속 없음 |
+| cloudflared 2026.11.1 | 공식 배포물 SHA256 확인 후 예제 ingress validate, URL별 사설 backend 매칭과 알 수 없는 호스트 404 매칭 검사. 외부 터널 연결 없음 |
 | Bastion Terraform validate | 통과 |
 | HTTPS LB Terraform validate | 통과 |
 | API Gateway Terraform validate | 통과 |
@@ -24,10 +28,19 @@ Terraform mock test는 `mock_provider "oci"`로 실제 OCI API 호출을 대체�
 저장소 루트 `oci-secure-workflows/`에서 실행합니다. init은 provider 다운로드를 위해 인터넷에 접속합니다.
 
 ```sh
-python3 -m unittest discover -s tests -v
-bash -n scripts/infra.sh
+sh scripts/test.sh
 terraform fmt -check -recursive terraform
 ```
+
+기본 실행에서 sshuttle 패키지나 `CLOUDFLARED_BIN`이 없으면 해당 실제 클라이언트 계약 검사는 skip으로 표시합니다. 35개 전체 검사를 재현하려면 테스트 전용 환경에 sshuttle 2.0.0을 설치하고 공식 cloudflared 실행 파일을 준비합니다. 클라이언트 설치 경로에 맞춰 아래 값을 바꿉니다.
+
+```sh
+python3 -m venv .venv-test
+.venv-test/bin/python -m pip install sshuttle==2.0.0
+PYTHON_BIN=.venv-test/bin/python CLOUDFLARED_BIN=/absolute/path/to/cloudflared sh scripts/test.sh --clients
+```
+
+이 테스트는 로그인·경로 광고·방화벽 변경·DNS 등록을 수행하지 않습니다. Tailscale의 명령 호출 경로는 대체 실행 파일로 검사했으며 실제 클라이언트의 로그인·경로 적용은 수행하지 않았습니다. 설치된 macOS Tailscale launcher가 preferences 로딩 오류를 반환해 로컬 실제 CLI 검사도 성공으로 기록하지 않았습니다.
 
 각 스택에서 다음 명령을 반복합니다. `bastion` 대신 `load-balancer`, `api-gateway`, `nat`도 실행합니다.
 
@@ -45,5 +58,8 @@ terraform -chdir=terraform/bastion test
 - API Gateway JWT issuer/audience/JWKS 접근·토큰 검증·권한·실제 API 제한.
 - NAT 전환 시 공유 서브넷·SGW·DRG·피어링·출구 IP 의존성.
 - Public IP/IPv6 노출 제거와 Security Central finding 재평가.
+- sshuttle의 실제 로컬 방화벽 적용·원격 Python·DNS·네트워크 경로와 종료 복구.
+- Tailscale 로그인·광고 경로 교체·승인·접근 정책·클라이언트 경로 수신과 복구.
+- Cloudflare 계정·named tunnel 인증·Access의 허용/거부·DNS·외부 URL 연결.
 
 실제 OCI plan/apply, 세션 생성, DNS·서브넷·VNIC 변경과 Public IP 제거는 수행하지 않았습니다.

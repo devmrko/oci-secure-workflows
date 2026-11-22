@@ -11,6 +11,7 @@
 | `python3 scripts/access.py connect TARGET` | 같은 미리보기 | 없음, 오프라인 |
 | `python3 scripts/access.py connect TARGET --execute` | 상태 확인·새 세션 생성·SSH 실행 | 세션 생성 |
 | `python3 scripts/access.py ssh-config TARGET` | SSH 설정 블록 stdout 출력 | 없음, 파일 자동 수정 없음 |
+| `python3 scripts/access.py sshuttle-plan TARGET --cidr CIDR` | Linux VM을 경유할 sshuttle 명령 출력 | 없음, 오프라인 |
 | `python3 scripts/access.py attach-nsg --region REGION --vnic-id VNIC --nsg-id NSG` | NSG 연결 절차 출력 | 없음, 오프라인 |
 | 위 attach-nsg에 `--execute` 추가 | 기존 목록 조회·ETag 조건부 병합 갱신 | VNIC NSG 목록 변경 |
 
@@ -31,6 +32,23 @@
 | SSH target | `user`, `identity_file` | 대상 VM 로그인 정보, ssh-config 출력용 |
 
 사설 FQDN을 고정 포워딩 대상으로 넣는 기능, IPv6, Managed SSH 세션, 리전/VCN 간 자동 라우팅, 세션 재사용은 구현하지 않았습니다. SOCKS5의 도달 범위는 실제 Bastion·VCN·보안 규칙에 의해 정해집니다.
+
+## 셸 진입점과 추가 접속 도구
+
+`sh scripts/workflow.sh`로 기존 접속 명령과 추가 방법을 사용합니다. `OCI_ACCESS_CONFIG`는 Bastion target 설정 파일, `PYTHON_BIN`은 사용할 Python 실행 파일 경로입니다. network.py의 `--json`은 실행하지 않는 명령 배열 출력이며 `--execute`와 함께 사용할 수 없습니다.
+
+| 셸 명령 | --execute 동작 | 기본 동작 |
+|---|---|---|
+| `connect TARGET` | Bastion 세션 생성·SSH 터널 실행 | 연결 계획 |
+| `sshuttle TARGET --cidr CIDR` | 이미 열린 로컬 SSH 포워딩을 통해 sshuttle 실행 | 필요한 두 터미널 명령 출력 |
+| `tailscale status` | 설치된 CLI의 상태 조회 | 명령 출력 |
+| `tailscale connect` | `tailscale up`으로 로그인·연결 | 명령 출력 |
+| `tailscale advertise --cidr CIDR` | `tailscale set --advertise-routes=...` | 기존 광고 목록 교체 안내·명령 출력 |
+| `tailscale accept-routes` | `tailscale set --accept-routes` | 클라이언트 경로 수신 변경 안내 |
+| `cloudflare validate --config FILE` | 로컬 named tunnel의 ingress 검증 | 검증 명령 출력 |
+| `cloudflare run --config FILE --tunnel NAME` | 로컬 설정으로 named tunnel 실행 | 실행 명령 출력 |
+
+`--cidr`는 반복할 수 있고 RFC1918 IPv4 범위만 허용합니다. 기본 경로·공개 IP·IPv6·비정규 CIDR은 거부합니다. `--dns`는 sshuttle에서만 지원하고 기본 꺼짐입니다. Cloudflare의 설정에는 `config/cloudflared.example.yml`을 사용할 수 있으며 실제 `.yml`과 credentials JSON은 Git·ZIP에서 제외합니다. 로그인·경로 승인·DNS·접근 정책 구성은 [사용 절차](../guides/easy-workflows.md)에 있습니다.
 
 개인키 파일의 group/other 권한은 실제 실행 전에 거부합니다. 공개키 형식은 ssh-keygen으로 확인하지만, 암호화된 개인키와 공개키의 쌍 일치까지 사전 검증하지는 않습니다. 연결 실패 시 남은 세션을 정리합니다.
 

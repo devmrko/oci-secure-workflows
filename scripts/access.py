@@ -202,6 +202,38 @@ def ssh_config(cfg, name):
           f'    IdentitiesOnly yes\n    HostKeyAlias oci-{t["region"]}-{t["host"]}')
 
 
+def private_routes(cidrs):
+    private = [ipaddress.ip_network(n) for n in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")]
+    routes = []
+    for cidr in cidrs:
+        network = ipaddress.ip_network(cidr, strict=True)
+        if network.version != 4 or not any(network.subnet_of(n) for n in private):
+            raise ValueError("sshuttle routes must be explicit RFC1918 IPv4 CIDRs")
+        if str(network) not in routes:
+            routes.append(str(network))
+    if not routes:
+        raise ValueError("at least one private CIDR is required")
+    return routes
+
+
+def sshuttle_plan(cfg, name, cidrs, dns=False):
+    """Build an offline command; never start SSH or change local firewall rules."""
+    t = cfg["targets"][name]
+    if t["mode"] != "forward" or t.get("port") != 22:
+        raise ValueError("sshuttle-plan requires a forward target on SSH port 22")
+    if not t.get("user") or not t.get("identity_file"):
+        raise ValueError("sshuttle-plan requires user and identity_file for the Linux VM")
+    routes = private_routes(cidrs)
+    ssh = ["ssh", "-F", "/dev/null", "-i", t["identity_file"],
+           "-o", "IdentitiesOnly=yes", "-o", "ConnectTimeout=15",
+           "-o", f'HostKeyAlias=oci-{t["region"]}-{t["host"]}']
+    cmd = ["sshuttle", "--remote", f'{t["user"]}@127.0.0.1:{t["local_port"]}',
+           "--ssh-cmd", shlex.join(ssh), "--exclude", "127.0.0.0/8"]
+    if dns:
+        cmd.append("--dns")
+    return cmd + routes
+
+
 def attach_nsg(cfg, region, vnic_id, nsg_id, execute, runner=run_full_json):
     identifier(region, r"[a-z][a-z0-9-]+", "region")
     identifier(vnic_id, r"ocid1\.vnic\.[A-Za-z0-9_.-]+", "vnic id")
@@ -242,6 +274,11 @@ def main(argv=None):
         q.add_argument("target")
         if action == "connect":
             q.add_argument("--execute", action="store_true")
+    q = sub.add_parser("sshuttle-plan", help="print commands only; never starts sshuttle")
+    q.add_argument("target")
+    q.add_argument("--cidr", required=True, action="append", dest="cidrs")
+    q.add_argument("--dns", action="store_true", help="include optional global DNS interception")
+    q.add_argument("--json", action="store_true")
     n = sub.add_parser("attach-nsg")
     n.add_argument("--region", required=True)
     n.add_argument("--vnic-id", required=True)
@@ -269,6 +306,20 @@ def main(argv=None):
             p.error(f"unknown target {a.target}; use list")
         if a.action == "ssh-config":
             ssh_config(cfg, a.target)
+        elif a.action == "sshuttle-plan":
+            command = sshuttle_plan(cfg, a.target, a.cidrs, a.dns)
+            tunnel = [sys.executable, str(Path(__file__).resolve()), "--config",
+                      str(Path(a.config).expanduser().resolve()), "connect", a.target, "--execute"]
+            if a.json:
+                print(json.dumps({"bastion_command": tunnel, "sshuttle_command": command,
+                                  "validation": "command-preview-only"}, ensure_ascii=False))
+            else:
+                print("Terminal 1: open Bastion forwarding to the Linux VM:")
+                print(shlex.join(tunnel))
+                print("Terminal 2: after SSH login works, manually run:")
+                print(shlex.join(command))
+                print("Preview only. Linux VM needs Python 3.10+; local firewall privileges are required by sshuttle.")
+                print("Bastion TTL still applies. Review CIDR overlaps and stop sshuttle before closing the tunnel.")
         elif a.action == "connect" and a.execute:
             return connect(cfg, a.target)
         else:

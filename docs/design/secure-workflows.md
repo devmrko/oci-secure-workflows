@@ -27,6 +27,14 @@ JSON은 데이터로만 읽고 eval/source/shell=True를 쓰지 않는다. 터�
 
 ## 검증
 
+### SOCKS5 외 접속 방법 확장
+
+고정 포워딩을 기본 접속 방법으로 유지하고 sshuttle·Tailscale·회사 VPN·Cloudflare Tunnel을 선택 가이드로 연결한다. `sshuttle-plan`은 기존 SSH target을 재사용하여 필요한 사설 CIDR에 대한 명령만 출력한다. 네트워크·방화벽·외부 계정 설정을 자동으로 변경하지 않는다. SSH 원격지는 관리형 Bastion 자체가 아니라 고정 터널 뒤 Linux VM이며 loopback transport를 제외한다. DNS 중계는 명시적 옵션으로 제공하고 공개 IP·기본 경로·IPv6·호스트 비트가 남은 CIDR은 거부한다.
+
+검증은 기본 미실행, CIDR 경계, SSH 인자 quoting, CLI 전체 호출, 실제 sshuttle 옵션 파서와 OpenSSH의 구성 해석까지 수행한다. 외부 서비스의 등록·접속과 실제 OCI 트래픽은 별도 환경 검증으로 남기며 완료로 표시하지 않는다.
+
+추가 사용자 요청에 따라 POSIX 셸 진입점 `scripts/workflow.sh`를 제공한다. 기존 access.py의 연결 명령과 새 network.py의 sshuttle·Tailscale·Cloudflare 명령으로 위임한다. network.py는 공식 CLI 인자 배열을 만들고 기본은 미리보기, --execute에서만 subprocess로 실행한다. sshuttle은 먼저 열린 Bastion SSH 터널을 사용한다. Tailscale은 상태·로그인·명시적 사설 경로 광고를 지원하고 경로 승인·권한 정책은 별도 단계로 둔다. Cloudflare는 로컬 관리 named tunnel 설정 파일의 검증·실행을 지원하며 토큰을 CLI 인자로 받지 않는다. 계정 생성·전역 설치·서비스 등록·DNS 변경을 자동 수행하지 않는다.
+
 설정 오류, 기본 실행의 무변경, 명령 인자 처리, OCI session 상태 전이·실패·타임아웃, loopback 바인딩, NSG 기존 목록 보존을 모의 실행기로 검증한다. Terraform은 fmt와 공식 provider 기반 validate를 수행한다. 실제 plan/apply와 네트워크 연결·정책 해소는 미검증 범위로 표시한다.
 
 ## 근거

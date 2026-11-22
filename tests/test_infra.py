@@ -67,7 +67,8 @@ class PackagingTests(unittest.TestCase):
         spec.loader.exec_module(package)
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            paths = ["config/access.json", "config/access.example.json", "terraform/x/terraform.tfvars",
+            paths = ["config/access.json", "config/access.example.json", "config/cloudflared.yml",
+                     "config/cloudflared.example.yml", "terraform/x/terraform.tfvars",
                      "terraform/x/terraform.example.tfvars", "terraform/x/review.tfplan.previous",
                      "terraform/x/.terraform/providers/private.tf", "terraform/x/.terraform.lock.hcl",
                      "terraform/x/terraform.tfstate", "scripts/access.py", "scripts/id.key"]
@@ -76,7 +77,7 @@ class PackagingTests(unittest.TestCase):
                 p.parent.mkdir(parents=True, exist_ok=True)
                 p.write_text("placeholder")
             names = {str(rel) for _, rel in package.source_files(root)}
-            self.assertEqual(names, {"config/access.example.json", "terraform/x/terraform.example.tfvars",
+            self.assertEqual(names, {"config/access.example.json", "config/cloudflared.example.yml", "terraform/x/terraform.example.tfvars",
                                      "terraform/x/.terraform.lock.hcl", "scripts/access.py"})
 
 

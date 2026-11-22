@@ -31,6 +31,9 @@
 |---|---|---|
 | SSH·VS Code·DB·RDP 접속 | Bastion 고정 포트 포워딩 CLI | [첫 접속](docs/guides/bastion.md) |
 | 여러 사설 웹·서버 접근 | Bastion SOCKS5 CLI | [SOCKS5 활용](docs/guides/clients.md) |
+| 프록시 설정 없이 여러 사설 서비스 접근 | sshuttle 실행 도우미 | [쉬운 실행](docs/guides/easy-workflows.md#sshuttle) |
+| 장시간 개발 또는 사설망 연결 | Tailscale 실행 도우미·회사 VPN 절차 | [쉬운 실행](docs/guides/easy-workflows.md#tailscale) |
+| 로그인한 사용자에게 웹 화면 제공 | Cloudflare named tunnel 실행 도우미 | [쉬운 실행](docs/guides/easy-workflows.md#cloudflare-tunnel) |
 | 웹사이트·웹앱 상시 제공 | HTTPS Load Balancer Terraform | [인프라 구성](docs/guides/infrastructure.md#https-load-balancer) |
 | JWT 인증·호출 제한이 필요한 API 제공 | API Gateway Terraform | [인프라 구성](docs/guides/infrastructure.md#api-gateway) |
 | VM의 외부 API·패키지 다운로드 | NAT Gateway와 라우트 테이블 Terraform | [인프라 구성](docs/guides/infrastructure.md#nat-gateway) |
@@ -63,6 +66,17 @@ python3 scripts/access.py --config config/access.example.json plan dev-ssh
 
 ## 실제 Bastion 연결
 
+셸 명령으로 방법을 고르려면 [방법별 쉬운 실행](docs/guides/easy-workflows.md)을 사용합니다. 실제 계정 연결이 필요한 방법과 로컬에서 검증된 범위는 [검증 결과](docs/validation.md)에 구분했습니다.
+
+```sh
+# 예제 설정으로 대상 확인과 sshuttle 실행 계획 보기. 실제 연결 없음.
+OCI_ACCESS_CONFIG=config/access.example.json sh scripts/workflow.sh list
+OCI_ACCESS_CONFIG=config/access.example.json sh scripts/workflow.sh sshuttle dev-ssh --cidr 10.0.1.0/24
+# 외부 도구가 설치되지 않아도 명령 미리보기는 가능합니다.
+sh scripts/workflow.sh tailscale status
+sh scripts/workflow.sh cloudflare validate --config config/cloudflared.example.yml
+```
+
 OCI CLI 인증, SSH 키 쌍, Bastion, 접속 허용 CIDR과 대상 방화벽 설정이 필요합니다. [준비 절차](docs/guides/bastion.md)를 먼저 완료합니다.
 
 ```sh
@@ -93,6 +107,7 @@ bash scripts/infra.sh bastion show
 ## 상세 안내
 
 - [Bastion 준비와 실행](docs/guides/bastion.md)
+- [방법별 셸 명령으로 쉽게 실행](docs/guides/easy-workflows.md)
 - [접속 방식의 원리와 실제 사용 장면](docs/explanation/access-model.md)
 - [SOCKS5로 사설 웹 화면 두 개 열기](docs/guides/socks5-walkthrough.md)
 - [SSH·VS Code·브라우저·DB·RDP·kubectl](docs/guides/clients.md)
