@@ -1,0 +1,12 @@
+profile        = "DEFAULT"
+region         = "ap-seoul-1"
+compartment_id = "ocid1.compartment.oc1..REPLACE"
+vcn_id         = "ocid1.vcn.oc1.ap-seoul-1.REPLACE"
+name           = "api-entry"
+subnet_id      = "ocid1.subnet.oc1.ap-seoul-1.REPLACE"
+client_cidrs   = ["203.0.113.10/32"]
+backend_ip     = "10.0.1.10"
+backend_port   = 8080
+jwt_issuer     = "https://identity.example.com/"
+jwt_audiences  = ["application-api"]
+jwks_uri       = "https://identity.example.com/.well-known/jwks.json"

@@ -1,0 +1,33 @@
+{
+  "profile": "DEFAULT",
+  "regions": {
+    "ap-seoul-1": {
+      "bastion_id": "ocid1.bastion.oc1.ap-seoul-1.REPLACE",
+      "public_key": "~/.ssh/oci-bastion.pub",
+      "private_key": "~/.ssh/oci-bastion",
+      "ttl_seconds": 10800
+    }
+  },
+  "targets": {
+    "dev-ssh": {
+      "region": "ap-seoul-1", "mode": "forward",
+      "host": "10.0.1.10", "port": 22, "local_port": 2222,
+      "user": "opc", "identity_file": "~/.ssh/oci-vm"
+    },
+    "dev-web": {
+      "region": "ap-seoul-1", "mode": "forward",
+      "host": "10.0.1.10", "port": 8080, "local_port": 8080
+    },
+    "dev-db": {
+      "region": "ap-seoul-1", "mode": "forward",
+      "host": "10.0.1.20", "port": 1521, "local_port": 11521
+    },
+    "dev-rdp": {
+      "region": "ap-seoul-1", "mode": "forward",
+      "host": "10.0.1.30", "port": 3389, "local_port": 13389
+    },
+    "seoul-socks": {
+      "region": "ap-seoul-1", "mode": "socks", "local_port": 1080
+    }
+  }
+}

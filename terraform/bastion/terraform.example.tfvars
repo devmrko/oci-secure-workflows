@@ -1,0 +1,9 @@
+profile          = "DEFAULT"
+region           = "ap-seoul-1"
+compartment_id   = "ocid1.compartment.oc1..REPLACE"
+vcn_id           = "ocid1.vcn.oc1.ap-seoul-1.REPLACE"
+name             = "developer-access"
+target_subnet_id = "ocid1.subnet.oc1.ap-seoul-1.REPLACE"
+client_cidrs     = ["203.0.113.10/32"]
+target_ports     = [22, 8080, 1521, 3389]
+ttl_seconds      = 10800

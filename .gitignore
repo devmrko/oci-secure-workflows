@@ -1,0 +1,15 @@
+config/*.json
+!config/*.example.json
+**/.terraform/
+**/*.tfstate*
+**/*.tfplan*
+**/*.tfvars
+**/*.tfvars.json
+!**/*.example.tfvars
+__pycache__/
+*.pyc
+.env*
+*.key
+*.pem
+*.zip
+.DS_Store
