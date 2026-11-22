@@ -20,6 +20,7 @@
 | Bash 구문 | `bash -n scripts/infra.sh` 통과 |
 | CLI 예제 | example 설정의 list, validate, plan 실행 확인 |
 | 문서 실행 경로 | README의 도움말·목록·고정 포워딩 계획·sshuttle 계획·Tailscale 미리보기·Cloudflare 미리보기 6개 명령 실행. 로컬 링크·제목 anchor와 전체 문서의 셸 블록 구문 검사 통과 |
+| 입문 다이어그램 | README 선택 그림 1개, 상황별 입문 그림 10개, 기존 시퀀스 그림 1개를 Mermaid 11 파서로 문법 검사. 링크·제목 anchor 검사 통과 |
 | OCI CLI 명령 계약 | 설치된 CLI의 help·JSON 샘플과 고정/동적 세션 입력 대조 |
 
 Terraform mock test는 `mock_provider "oci"`로 실제 OCI API 호출을 대체하고 `command = plan`만 실행합니다. 실제 프로파일·키·인프라를 사용하지 않습니다. Provider 바이너리는 첫 init에서 서명을 확인한 것을 나머지 스택의 로컬 검증에도 재사용했습니다. 환경별 인증·정책·서비스 내부 제약을 모의 테스트가 검증하지는 않습니다.

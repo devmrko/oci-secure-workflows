@@ -4,6 +4,32 @@ OCI 서버의 Public IP를 제거한 뒤에도 개발·관리와 웹/API 제공�
 
 예를 들어 본인은 Bastion으로 SSH 개발을 하고, 동료에게는 Load Balancer의 HTTPS 데모 URL을 제공할 수 있습니다. 여러 사설 서비스를 오가거나 장시간 개발하는 경우에는 sshuttle·Tailscale·기존 회사 VPN도 검토할 수 있습니다. SOCKS5는 제공하는 방법 중 하나이며 필수는 아닙니다.
 
+## 그림으로 먼저 선택하기
+
+**서버에 들어가서 작업하는 일**, **다른 사람에게 서비스를 제공하는 일**, **서버가 외부에 요청하는 일**을 먼저 구분합니다. 예를 들어 웹 화면 하나를 본인이 확인하는 상황과, 고객이 그 웹을 계속 이용하는 상황은 다른 경로를 사용합니다.
+
+```mermaid
+flowchart TD
+    START{"지금 하려는 일은 무엇인가요?"}
+    START -->|내가 서버를 관리하거나 개발| MANAGE{"어떻게 사용할 건가요?"}
+    MANAGE -->|한두 서버나 화면에 접속| FIXED["Bastion 고정 포워딩<br/>PC의 로컬 포트를 사설 서비스에 연결"]
+    MANAGE -->|여러 사설 서비스를 오가며 사용| MULTI["SOCKS5 또는 sshuttle<br/>앱별 프록시 설정 여부로 비교"]
+    MANAGE -->|여러 도구로 장시간 작업| VPN["기존 회사 VPN 또는 Tailscale 검토<br/>사설망 접속 경로를 준비"]
+    START -->|다른 사람이 웹사이트를 이용| WEB["HTTPS Load Balancer<br/>웹서비스의 접속 입구"]
+    START -->|프로그램이 인증된 API를 호출| API["API Gateway 또는 앱 인증을 갖춘 LB<br/>API 요청을 검사하고 전달"]
+    START -->|서버가 외부 API나 패키지 저장소에 요청| NAT["NAT Gateway<br/>사설 서버의 외부 통신 경로"]
+    classDef manage fill:#e8f1ff,stroke:#3469a3,color:#142d4e
+    classDef service fill:#e9f6ee,stroke:#3e8052,color:#173823
+    classDef outbound fill:#fff2df,stroke:#b46b13,color:#4d2a07
+    class FIXED,MULTI,VPN manage
+    class WEB,API service
+    class NAT outbound
+```
+
+파란 상자는 본인의 관리 접속, 녹색 상자는 서비스 이용자의 접속, 주황 상자는 서버의 외부 통신을 뜻합니다. Cloudflare Tunnel와 Access는 **외부 중계 서비스 사용이 허용된 환경에서**, 로그인한 사용자에게 웹을 제공하는 또 다른 선택지입니다. 위 그림은 처음 검토할 방법을 고르는 안내이며 구성 전체를 자동 결정하지 않습니다. 이미 회사 VPN으로 대상 서버에 접근할 수 있다면 그 경로부터 확인합니다.
+
+처음 배우는 분은 [상황별 그림으로 이해하는 입문 가이드](docs/explanation/beginner-guide.md)를 먼저 읽으십시오. 각 방법을 **어떤 경우에 쓰는지 → 왜 필요한지 → 누가 무슨 역할을 하는지 → 사용자는 무엇을 입력하는지** 순서로 설명합니다. 용어를 알고 있다면 아래 비교표와 실행 절차로 바로 진행할 수 있습니다.
+
 ## 어떤 방법을 선택하나요
 
 | 하고 싶은 일 | 먼저 검토할 방법 | 접속할 때 달라지는 점 |
@@ -21,6 +47,8 @@ OCI 서버의 Public IP를 제거한 뒤에도 개발·관리와 웹/API 제공�
 처음에는 **고정 포워딩으로 본인의 접속 하나를 성공시키는 것**부터 권합니다. 서비스가 늘거나 연결 시간이 불편해지면 다른 방식을 선택합니다. [방법별 비교와 제약](docs/guides/alternatives.md) · [주소와 접속 원리 설명](docs/explanation/access-model.md)
 
 ## 각 방식에서 무엇이 연결되나요
+
+아래 경로에서 화살표는 접속·요청의 흐름을 단순화한 것입니다. `사설 VM`은 인터넷에서 바로 접속할 수 있는 주소 없이 운영하는 클라우드 서버입니다. `127.0.0.1`은 그 주소를 입력한 PC 자신을 뜻합니다.
 
 ```text
 고정 포워딩  PC의 localhost:8080 → Bastion → 사설 VM:8080
@@ -134,6 +162,6 @@ sh scripts/test.sh
 
 ## 상세 문서와 배포 파일
 
-[원리 설명](docs/explanation/access-model.md) · [방법 비교](docs/guides/alternatives.md) · [셸 사용 절차](docs/guides/easy-workflows.md) · [명령과 설정 참조](docs/reference/commands.md) · [공식 출처](docs/reference/sources.md) · [설계](docs/design/secure-workflows.md) · [설계 결정](docs/adr/0001-access-paths.md)
+[그림으로 배우는 입문 가이드](docs/explanation/beginner-guide.md) · [주소와 접속 원리](docs/explanation/access-model.md) · [방법 비교](docs/guides/alternatives.md) · [셸 사용 절차](docs/guides/easy-workflows.md) · [명령과 설정 참조](docs/reference/commands.md) · [공식 출처](docs/reference/sources.md) · [설계](docs/design/secure-workflows.md) · [설계 결정](docs/adr/0001-access-paths.md)
 
 `python3 scripts/package.py`를 실행하면 상위 디렉터리에 `oci-secure-workflows.zip`이 생성됩니다. 소스·문서·예제만 포함하며 실제 설정·키·Terraform state와 plan은 제외합니다. 외부 참고 코드는 복사하지 않았고, 이 저장소의 별도 재배포 라이선스는 아직 지정하지 않았습니다.
