@@ -34,6 +34,7 @@
 
 - [sshuttle 2.0.0 사용법](https://sshuttle.readthedocs.io/en/stable/usage.html), [옵션](https://sshuttle.readthedocs.io/en/stable/manpage.html), [요구사항](https://sshuttle.readthedocs.io/en/stable/requirements.html): SSH 목적지·CIDR·DNS·원격 Python과 로컬 방화벽 요구. 실제 패키지의 parser로 생성 명령을 확인했습니다.
 - [Tailscale subnet router](https://tailscale.com/docs/features/subnet-routers): IP forwarding, 경로 광고와 승인, access rule·클라이언트 route 수신 구분. 실제 계정 연결은 수행하지 않았습니다.
+- [Tailscale 연결 종류](https://tailscale.com/docs/reference/connection-types), [포트 안내](https://tailscale.com/docs/reference/faq/firewall-ports): VM Public IP 없이 필요한 외부 연결을 갖춘 NAT 환경에서 직접 또는 중계 연결 사용. OCI NAT와 상대 기기의 조합은 실측하지 않았으므로 직접 연결·성능을 보장하지 않습니다.
 - [Cloudflare 사용자 인증 웹 접근](https://developers.cloudflare.com/cloudflare-one/setup/secure-private-apps/private-web-app/), [로컬 named tunnel 설정](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/configuration-file/): Tunnel과 Access의 역할 구분, ingress와 마지막 catch-all 규칙. 공식 cloudflared 2026.11.1로 로컬 설정과 URL 매칭을 검사했습니다.
 
 ## Terraform resource 계약

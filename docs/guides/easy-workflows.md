@@ -121,6 +121,8 @@ sh scripts/workflow.sh sshuttle dev-ssh --cidr 10.0.1.0/24 --cidr 10.0.2.0/24
 
 PC와 서버를 조직의 Tailscale 네트워크에 등록해 장시간 사설 접속에 사용합니다. Bastion을 경유하지 않는 구성은 Bastion TTL과 독립됩니다. 외부 계정·중계 경로 사용이 조직 정책에 맞는지 확인하고 [공식 클라이언트](https://tailscale.com/download)를 설치합니다. 이 도우미는 클라이언트를 설치하거나 조직의 사용 승인을 대신하지 않습니다.
 
+**VM의 Public IP는 필수가 아닙니다.** Tailscale을 설치하는 사설 VM 또는 subnet router에서 NAT 같은 외부 통신 경로·라우트·DNS·보안 규칙을 준비해야 합니다. 제어 서비스와 DERP 중계에는 HTTPS TCP 443 연결이 사용되고, 직접 UDP 연결 가능성은 양쪽 NAT와 방화벽 조건에 따라 달라집니다. [NAT와 중계 연결 그림](../explanation/beginner-guide.md#tailscale은-vm에-public-ip가-없어도-되나요)
+
 PC와 대상 서버 각각에서 다음을 사용합니다. 미리보기 후 실제 실행하고 조직 로그인 절차를 완료합니다. Linux의 권한 요구는 해당 설치 방식에 맞춰 처리합니다.
 
 ```sh
@@ -149,6 +151,16 @@ sh scripts/workflow.sh tailscale accept-routes --execute
 ```
 
 5. 허용한 계정으로 사설 서비스가 연결되고, 허용하지 않은 계정에서는 거부되는지 확인합니다. 원래 서비스 로그인도 유지합니다.
+
+접속 가능한 환경에서 실제 연결을 만든 뒤 아래 진단 명령으로 연결 종류를 확인합니다. 이 명령들은 설치된 공식 CLI를 직접 실행하며 본 도구의 미리보기 명령이 아닙니다. `YOUR_PEER`는 등록한 상대 기기의 이름이나 Tailscale IP로 바꿉니다.
+
+```sh
+tailscale netcheck
+tailscale ping YOUR_PEER
+tailscale status
+```
+
+`direct`는 직접 연결, `relay`는 DERP 경유, `peer-relay`는 같은 Tailscale 네트워크의 별도 기기를 통한 중계를 뜻합니다. 연결 가능 여부뿐 아니라 실제 SSH·웹·DB 작업의 지연·처리량도 확인합니다. 특히 subnet router에 트래픽이 모이는 구성은 중계 시 성능을 따로 측정해야 합니다. NAT만 만들어 놓고 직접 연결이 된다고 가정하지 마십시오. [연결 종류 확인](https://tailscale.com/docs/reference/connection-types)
 
 복구 시 기록한 광고 경로·클라이언트 경로 수신 상태를 원래 값으로 되돌리고 Console에서 필요한 경로 승인을 해제합니다. 공유 subnet router에서 무조건 `tailscale down`을 실행하면 다른 사용자 연결도 끊길 수 있으므로 도우미는 일괄 종료를 제공하지 않습니다.
 

@@ -127,6 +127,35 @@ flowchart LR
 
 [Tailscale 실행과 확인](../guides/easy-workflows.md#tailscale) · [회사망 연결 준비](../guides/alternatives.md#회사망-연결-요청에-필요한-정보)
 
+### Tailscale은 VM에 Public IP가 없어도 되나요
+
+**VM 자체에 Public IP를 붙이지 않고 NAT를 통해 외부 연결을 시작할 수 있으면 사용할 수 있습니다.** Tailscale을 설치한 VM이 외부 인증·연결 조정 서비스와 필요한 중계 서비스에 도달해야 합니다. OCI NAT Gateway는 사설 VM의 요청을 자기 Public IP로 내보내고 그 연결의 응답을 되돌려 줍니다. VM에 Public IP를 직접 할당하는 것과 다른 구성입니다.
+
+아래는 **DERP라는 Tailscale 중계 서버를 사용하는 경우**입니다. 화살표는 각 기기가 먼저 외부 연결을 시작하는 방향을 나타냅니다.
+
+```mermaid
+flowchart LR
+    VM["OCI 사설 VM<br/>Tailscale 설치<br/>VM Public IP 없음"] -->|먼저 외부 연결 시작| NAT["OCI NAT Gateway<br/>외부 통신용 Public IP 보유"]
+    NAT -->|외부로 HTTPS 연결| RELAY["Tailscale DERP<br/>암호화된 통신 중계"]
+    PC["직원 PC<br/>Tailscale 설치"] -->|PC도 먼저 외부 연결 시작| RELAY
+```
+
+두 기기는 이미 맺은 연결을 통해 암호화된 데이터를 주고받습니다. 그래서 직원이 VM의 Tailscale 주소로 SSH를 쓰더라도, 인터넷에서 VM의 공개 IP:22에 새 연결을 거는 방식은 아닙니다. **NAT 자체가 SSH 포트 포워딩을 제공하는 것이 아니라 Tailscale이 그 외부 연결을 활용해 기기 사이의 경로를 만드는 것**입니다.
+
+Tailscale은 환경에 따라 직접 UDP 연결도 사용합니다. 직접 연결이 어려우면 DERP 등 중계 경로를 사용할 수 있습니다. 직접·중계 모두 종단 간 암호화를 사용하지만 중계는 지연과 처리량에서 불리할 수 있습니다. 실제 OCI NAT와 직원 PC의 네트워크 조합을 시험하기 전에는 어느 방식이 될지 단정할 수 없습니다.
+
+| 확인할 항목 | 의미 |
+|---|---|
+| NAT와 라우트 | VM의 인터넷 목적지 트래픽이 NAT 등 승인된 외부 경로로 전달되어야 함 |
+| DNS와 외부 통신 규칙 | 필요한 서비스 이름 조회와 연결이 허용되어야 함. 제어·DERP 연결에는 HTTPS TCP 443 사용 |
+| UDP 통신 | 직접 연결 가능성과 성능에 영향. STUN과 기기 간 통신 조건은 공식 포트 안내로 확인 |
+| 계정과 접근 정책 | 두 기기 등록과 필요한 사용자·서비스 접근 허용은 별도로 필요 |
+| 대상 앱 | Tailscale 주소 또는 허용된 내부 경로에서 실제 서비스에 도달할 수 있어야 함 |
+
+서버마다 Tailscale을 설치하면 각 서버에 외부 연결 경로가 필요합니다. subnet router 한 대만 사용하는 구성은 그 router가 외부 Tailscale 서비스에 연결하고 내부 서비스로 전달합니다. 이때 Tailscale을 설치하지 않은 내부 서비스들이 Tailscale 때문에 모두 인터넷에 나갈 필요는 없습니다.
+
+공식 근거: [OCI NAT의 동작](https://docs.oracle.com/en-us/iaas/Content/Network/Tasks/NATgateway.htm), [Tailscale 직접·중계 연결](https://tailscale.com/docs/reference/connection-types), [Tailscale 외부 통신과 포트](https://tailscale.com/docs/reference/faq/firewall-ports).
+
 ## 상황 5 동료나 고객이 웹사이트를 이용해야 합니다
 
 **예:** 동료에게 데모 URL을 알려 주거나 고객이 업무 웹사이트를 사용하게 합니다. 사용자마다 OCI 키와 터널을 준비하게 하기 어렵습니다.

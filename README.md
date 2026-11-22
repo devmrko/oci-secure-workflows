@@ -90,6 +90,8 @@ OCI_ACCESS_CONFIG=config/access.example.json sh scripts/workflow.sh plan dev-web
 
 예제와 도우미가 모든 인프라·계정·서비스 설치를 끝내 주는 것은 아닙니다. 외부 서비스의 사용 가능 여부와 요금도 확인합니다. 준비 항목과 설치 안내는 [방법별 쉬운 실행](docs/guides/easy-workflows.md)에 있습니다.
 
+**Tailscale을 설치한 VM 자체에 Public IP가 필요한 것은 아닙니다.** 사설 VM이 NAT 같은 경로로 Tailscale 서비스에 필요한 외부 연결을 시작할 수 있어야 합니다. NAT Gateway에는 외부 통신용 Public IP가 있지만 VM에 직접 할당하는 것과는 다릅니다. NAT와 방화벽 특성에 따라 직접 UDP 연결 또는 암호화된 중계 연결을 사용하며, NAT를 만들었다는 사실만으로 직접 연결과 성능이 보장되지는 않습니다. [그림과 연결 조건](docs/explanation/beginner-guide.md#tailscale은-vm에-public-ip가-없어도-되나요)
+
 ## 첫 실제 접속은 고정 포워딩으로
 
 먼저 [Bastion 준비](docs/guides/bastion.md)를 완료하고 대상 서버에서 웹앱이 실행 중인지 확인합니다. 예제는 서버의 사설 IP에서 접근 가능한 8080 포트를 사용합니다. 기존 `config/access.json`이 없다면 아래처럼 복사하고, Bastion OCID·리전·키 경로와 `dev-web`의 서버 IP·포트를 실제 값으로 수정합니다.
