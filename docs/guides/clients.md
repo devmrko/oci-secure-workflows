@@ -69,6 +69,8 @@ python3 scripts/access.py connect dev-db --execute
 
 DB 클라이언트에는 host `127.0.0.1`, port `11521`을 입력합니다. 서비스명·계정·인증서는 실제 DB 설정을 유지합니다. ADB의 mTLS wallet·TLS 호스트명·접속 문자열은 별도로 맞춰야 하며, 일반 DB용 예제를 그대로 적용할 수 있다고 가정하지 않습니다.
 
+ADB는 [관리형 서비스 접속](managed-services.md)을 따릅니다. SQL·웹 443·앱의 직접 연결과 TLS 이름·wallet을 설명합니다. 동시 접속은 [여러 목적지 연결](multiple-targets.md)을 확인합니다.
+
 ## Windows RDP
 
 ```sh

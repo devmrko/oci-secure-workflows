@@ -1,6 +1,8 @@
 # 검증 결과
 
-검증 날짜: 2026-11-22. 실행 환경: macOS arm64, Python 3.15.0, OCI CLI 3.88.0, Terraform 1.14.0, OCI provider 9.14.0.
+최종 문서·예제 검증: 2026-11-23. 기존 인프라 검증: 2026-11-22. 실행 환경: macOS arm64, Python 3.15.0, OCI CLI 3.88.0, Terraform 1.14.0, OCI provider 9.14.0.
+
+2026-11-23에는 전체 35개 테스트를 재실행해 통과했습니다. ADB·다중 접속 예제와 문서를 추가했으며 Terraform 코드는 변경하지 않았습니다.
 
 ## 수행한 검증
 
@@ -20,7 +22,9 @@
 | Bash 구문 | `bash -n scripts/infra.sh` 통과 |
 | CLI 예제 | example 설정의 list, validate, plan 실행 확인 |
 | 문서 실행 경로 | README의 도움말·목록·고정 포워딩 계획·sshuttle 계획·Tailscale 미리보기·Cloudflare 미리보기 6개 명령 실행. 로컬 링크·제목 anchor와 전체 문서의 셸 블록 구문 검사 통과 |
-| 입문 다이어그램 | README 선택 그림 1개, NAT와 Tailscale 중계 설명을 포함한 입문 그림 11개, 기존 시퀀스 그림 1개를 Mermaid 11 파서로 문법 검사. 링크·제목 anchor 검사 통과 |
+| 문서 구조·다이어그램 | Markdown 19개, 로컬 링크·제목 anchor 88개, 셸 블록 58개 구문 검사, Mermaid 11 파서로 그림 23개 문법 검사 통과. 브라우저 시각 렌더링 검사와 별개 |
+| ADB 예제 | 관리형 서비스 설정의 offline validate, mTLS 11522→1522·TLS 11521→1521·SOCKS 1080 계획 확인. 실제 DB·wallet·TLS 핸드셰이크 시험 없음 |
+| 다중 목적지 | sshuttle·Tailscale의 두 CIDR 명령 미리보기 확인. 실제 cloudflared로 다중 웹 설정 검사, 두 도메인의 backend 분기와 미등록 호스트 404 확인 |
 | OCI CLI 명령 계약 | 설치된 CLI의 help·JSON 샘플과 고정/동적 세션 입력 대조 |
 
 Terraform mock test는 `mock_provider "oci"`로 실제 OCI API 호출을 대체하고 `command = plan`만 실행합니다. 실제 프로파일·키·인프라를 사용하지 않습니다. Provider 바이너리는 첫 init에서 서명을 확인한 것을 나머지 스택의 로컬 검증에도 재사용했습니다. 환경별 인증·정책·서비스 내부 제약을 모의 테스트가 검증하지는 않습니다.
@@ -63,5 +67,6 @@ terraform -chdir=terraform/bastion test
 - sshuttle의 실제 로컬 방화벽 적용·원격 Python·DNS·네트워크 경로와 종료 복구.
 - Tailscale 로그인·광고 경로 교체·승인·접근 정책·클라이언트 경로 수신과 복구.
 - Cloudflare 계정·named tunnel 인증·Access의 허용/거부·DNS·외부 URL 연결.
+- ADB Private Endpoint 전환·공개 접속 차단·NSG·DNS·wallet·클라이언트별 TLS 이름 검증·SQL 조회·웹 443 접속. 다중 서버의 실제 동시 트래픽·용량·장애 영향.
 
 실제 OCI plan/apply, 세션 생성, DNS·서브넷·VNIC 변경과 Public IP 제거는 수행하지 않았습니다.

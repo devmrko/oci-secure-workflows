@@ -37,6 +37,14 @@
 - [Tailscale 연결 종류](https://tailscale.com/docs/reference/connection-types), [포트 안내](https://tailscale.com/docs/reference/faq/firewall-ports): VM Public IP 없이 필요한 외부 연결을 갖춘 NAT 환경에서 직접 또는 중계 연결 사용. OCI NAT와 상대 기기의 조합은 실측하지 않았으므로 직접 연결·성능을 보장하지 않습니다.
 - [Cloudflare 사용자 인증 웹 접근](https://developers.cloudflare.com/cloudflare-one/setup/secure-private-apps/private-web-app/), [로컬 named tunnel 설정](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/configuration-file/): Tunnel과 Access의 역할 구분, ingress와 마지막 catch-all 규칙. 공식 cloudflared 2026.11.1로 로컬 설정과 URL 매칭을 검사했습니다.
 
+## 관리형 서비스 접속
+
+- [ADB 네트워크 선택](https://docs.oracle.com/en-us/iaas/autonomous-database-serverless/doc/network-access-options.html), [Private Endpoint](https://docs.oracle.com/en-us/iaas/autonomous-database-serverless/doc/private-endpoints-autonomous.html): 공개 ACL·사설 endpoint·공개 접속 병행 여부, NSG·DNS.
+- [ADB 연결과 TLS/mTLS](https://docs.oracle.com/en-us/iaas/autonomous-database-serverless/doc/connect-introduction.html): mTLS 1522, TLS 1521/1522와 wallet 요구 구분.
+- [Bastion DB 연결](https://docs.oracle.com/en-us/iaas/Content/Bastion/Tasks/connect-port-forwarding.htm), [ADB 터널 구성 예](https://docs.oracle.com/en/solutions/migrate-tomcat-workloads/migrate-application-database.html): TCP 중계와 클라이언트 설정. 후자의 원래 DB 이름 유지 방식을 참고하되 공개 점프 VM 대신 관리형 Bastion 사용.
+- [Database Actions](https://docs.oracle.com/en-us/iaas/autonomous-database-serverless/doc/connect-database-actions.html), [APEX Service 제한](https://docs.oracle.com/en-us/iaas/autonomous-database-serverless/doc/apex-workload-limitations.html): HTTPS 경로와 별도 APEX Service의 SQL*Net 제한.
+- [Service Gateway](https://docs.oracle.com/en-us/iaas/Content/Network/Tasks/servicegateway.htm): 같은 리전의 지원 OSN 서비스로 가는 사설 경로. 서비스 endpoint 자체의 사설 IP와 구분.
+
 ## Terraform resource 계약
 
 [Bastion](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/bastion_bastion.html) · [LB listener](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/load_balancer_listener.html) · [LB backend set](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/load_balancer_backend_set.html) · [NSG rule](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/core_network_security_group_security_rule.html) · [API Gateway](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/apigateway_gateway.html) · [API deployment](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/apigateway_deployment.html) · [NAT Gateway](https://docs.oracle.com/en-us/iaas/tools/terraform-provider-oci/latest/docs/r/core_nat_gateway.html).

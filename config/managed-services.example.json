@@ -1,0 +1,24 @@
+{
+  "profile": "DEFAULT",
+  "regions": {
+    "ap-seoul-1": {
+      "bastion_id": "ocid1.bastion.oc1.ap-seoul-1.REPLACE",
+      "public_key": "~/.ssh/oci-bastion.pub",
+      "private_key": "~/.ssh/oci-bastion",
+      "ttl_seconds": 10800
+    }
+  },
+  "targets": {
+    "adb-mtls": {
+      "region": "ap-seoul-1", "mode": "forward",
+      "host": "10.0.2.20", "port": 1522, "local_port": 11522
+    },
+    "adb-tls": {
+      "region": "ap-seoul-1", "mode": "forward",
+      "host": "10.0.2.20", "port": 1521, "local_port": 11521
+    },
+    "managed-socks": {
+      "region": "ap-seoul-1", "mode": "socks", "local_port": 1080
+    }
+  }
+}

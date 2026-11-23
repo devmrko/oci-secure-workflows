@@ -1,5 +1,7 @@
 # 방법별 셸 명령으로 쉽게 실행
 
+도구 설명은 [도구 개요](../explanation/beginner-guide.md#도구-개요), 서버 여러 대 연결은 [동시 접속 구성](multiple-targets.md), ADB는 [관리형 서비스 접속](managed-services.md)을 확인합니다.
+
 `sh scripts/workflow.sh` 하나로 접속 방법을 선택합니다. 기본은 명령 미리보기이며, `--execute`에서 해당 도구를 실행합니다. 이 문서의 실제 실행 명령은 계정·키·네트워크 준비를 마친 뒤 사용합니다. 도구 설치와 계정 생성, 네트워크 설정 전체를 자동으로 처리하지는 않습니다.
 
 어떤 방법을 써야 할지 아직 정하지 못했다면 [상황별 입문 그림](../explanation/beginner-guide.md)을 먼저 읽으십시오. 이 문서는 선택한 방법의 실제 준비·실행·확인·종료 순서를 다룹니다.
@@ -36,7 +38,7 @@ sh scripts/workflow.sh doctor
 
 `OCI_ACCESS_CONFIG`로 다른 설정 파일을 선택할 수 있습니다. `PYTHON_BIN`으로 Python 실행 파일을 지정할 수도 있습니다. 셸 도구는 현재 디렉터리와 무관하게 저장소 내부 스크립트를 찾으며 설정·키 내용은 명령에 삽입하지 않습니다.
 
-### 어떤 값을 바꾸나요
+### 설정 항목
 
 예제 주소와 이름은 사용자의 실제 환경으로 바꿔야 합니다. 전체 서비스를 설치할 필요는 없고 선택한 방법의 항목만 준비합니다.
 
@@ -121,7 +123,7 @@ sh scripts/workflow.sh sshuttle dev-ssh --cidr 10.0.1.0/24 --cidr 10.0.2.0/24
 
 PC와 서버를 조직의 Tailscale 네트워크에 등록해 장시간 사설 접속에 사용합니다. Bastion을 경유하지 않는 구성은 Bastion TTL과 독립됩니다. 외부 계정·중계 경로 사용이 조직 정책에 맞는지 확인하고 [공식 클라이언트](https://tailscale.com/download)를 설치합니다. 이 도우미는 클라이언트를 설치하거나 조직의 사용 승인을 대신하지 않습니다.
 
-**VM의 Public IP는 필수가 아닙니다.** Tailscale을 설치하는 사설 VM 또는 subnet router에서 NAT 같은 외부 통신 경로·라우트·DNS·보안 규칙을 준비해야 합니다. 제어 서비스와 DERP 중계에는 HTTPS TCP 443 연결이 사용되고, 직접 UDP 연결 가능성은 양쪽 NAT와 방화벽 조건에 따라 달라집니다. [NAT와 중계 연결 그림](../explanation/beginner-guide.md#tailscale은-vm에-public-ip가-없어도-되나요)
+**VM의 Public IP는 필수가 아닙니다.** Tailscale을 설치하는 사설 VM 또는 subnet router에서 NAT 같은 외부 통신 경로·라우트·DNS·보안 규칙을 준비해야 합니다. 제어 서비스와 DERP 중계에는 HTTPS TCP 443 연결이 사용되고, 직접 UDP 연결 가능성은 양쪽 NAT와 방화벽 조건에 따라 달라집니다. [NAT와 중계 연결 그림](../explanation/beginner-guide.md#tailscale의-nat-연결-조건)
 
 PC와 대상 서버 각각에서 다음을 사용합니다. 미리보기 후 실제 실행하고 조직 로그인 절차를 완료합니다. Linux의 권한 요구는 해당 설치 방식에 맞춰 처리합니다.
 

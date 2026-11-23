@@ -1,23 +1,26 @@
 # OCI Secure Workflows
 
-OCI 서버의 Public IP를 제거한 뒤에도 개발·관리와 웹/API 제공을 계속할 수 있도록 접속 방법, 셸 도구, 인프라 예제를 함께 제공합니다. 내 PC에서 서버를 관리하는 경로와 다른 사용자가 서비스를 이용하는 경로를 구분해 선택합니다.
+OCI 서버의 Public IP를 제거한 뒤에도 개발·관리와 웹/API 제공을 계속할 수 있도록 접속 방법, 셸 도구, 인프라 예제를 함께 제공합니다. ADB 같은 관리형 서비스의 사설 접속도 다룹니다. 내 PC의 관리 접속, 사용자용 서비스, 서버의 외부 통신을 구분해 선택합니다.
 
 예를 들어 본인은 Bastion으로 SSH 개발을 하고, 동료에게는 Load Balancer의 HTTPS 데모 URL을 제공할 수 있습니다. 여러 사설 서비스를 오가거나 장시간 개발하는 경우에는 sshuttle·Tailscale·기존 회사 VPN도 검토할 수 있습니다. SOCKS5는 제공하는 방법 중 하나이며 필수는 아닙니다.
 
-## 그림으로 먼저 선택하기
+## 접속 방법 선택
+
+처음이면 [도구 이름과 역할](docs/explanation/beginner-guide.md#도구-개요)부터 읽습니다. [여러 서버 동시 접속](docs/guides/multiple-targets.md) · [ADB·PaaS·SaaS 접속 범위](docs/guides/managed-services.md)
 
 **서버에 들어가서 작업하는 일**, **다른 사람에게 서비스를 제공하는 일**, **서버가 외부에 요청하는 일**을 먼저 구분합니다. 예를 들어 웹 화면 하나를 본인이 확인하는 상황과, 고객이 그 웹을 계속 이용하는 상황은 다른 경로를 사용합니다.
 
 ```mermaid
 flowchart TD
-    START{"지금 하려는 일은 무엇인가요?"}
-    START -->|내가 서버를 관리하거나 개발| MANAGE{"어떻게 사용할 건가요?"}
-    MANAGE -->|한두 서버나 화면에 접속| FIXED["Bastion 고정 포워딩<br/>PC의 로컬 포트를 사설 서비스에 연결"]
-    MANAGE -->|여러 사설 서비스를 오가며 사용| MULTI["SOCKS5 또는 sshuttle<br/>앱별 프록시 설정 여부로 비교"]
-    MANAGE -->|여러 도구로 장시간 작업| VPN["기존 회사 VPN 또는 Tailscale 검토<br/>사설망 접속 경로를 준비"]
-    START -->|다른 사람이 웹사이트를 이용| WEB["HTTPS Load Balancer<br/>웹서비스의 접속 입구"]
-    START -->|프로그램이 인증된 API를 호출| API["API Gateway 또는 앱 인증을 갖춘 LB<br/>API 요청을 검사하고 전달"]
-    START -->|서버가 외부 API나 패키지 저장소에 요청| NAT["NAT Gateway<br/>사설 서버의 외부 통신 경로"]
+    START{"접속 목적"}
+    START -->|개발·관리| MANAGE{"접속 범위"}
+    MANAGE -->|단일 서비스| FIXED["Bastion 고정 포워딩<br/>로컬 포트와 사설 목적지 연결"]
+    MANAGE -->|여러 서비스| MULTI["SOCKS5 또는 sshuttle<br/>앱별 프록시 설정 여부로 선택"]
+    MANAGE -->|지속적인 사설망 연결| VPN["회사 VPN 또는 Tailscale<br/>기기·대역 단위 연결"]
+    START -->|웹 제공| WEB["HTTPS Load Balancer<br/>웹서비스 접속 입구"]
+    START -->|API 제공| API["API Gateway 또는 인증된 LB<br/>요청 검사와 전달"]
+    START -->|서버의 외부 통신| NAT["NAT Gateway<br/>외부 API·패키지 저장소 연결"]
+    START -->|관리형 서비스 접속| PAAS["Private Endpoint 지원 확인<br/>PC: Bastion·VPN / 앱: 사설 직접 연결"]
     classDef manage fill:#e8f1ff,stroke:#3469a3,color:#142d4e
     classDef service fill:#e9f6ee,stroke:#3e8052,color:#173823
     classDef outbound fill:#fff2df,stroke:#b46b13,color:#4d2a07
@@ -28,13 +31,14 @@ flowchart TD
 
 파란 상자는 본인의 관리 접속, 녹색 상자는 서비스 이용자의 접속, 주황 상자는 서버의 외부 통신을 뜻합니다. Cloudflare Tunnel와 Access는 **외부 중계 서비스 사용이 허용된 환경에서**, 로그인한 사용자에게 웹을 제공하는 또 다른 선택지입니다. 위 그림은 처음 검토할 방법을 고르는 안내이며 구성 전체를 자동 결정하지 않습니다. 이미 회사 VPN으로 대상 서버에 접근할 수 있다면 그 경로부터 확인합니다.
 
-처음 배우는 분은 [상황별 그림으로 이해하는 입문 가이드](docs/explanation/beginner-guide.md)를 먼저 읽으십시오. 각 방법을 **어떤 경우에 쓰는지 → 왜 필요한지 → 누가 무슨 역할을 하는지 → 사용자는 무엇을 입력하는지** 순서로 설명합니다. 용어를 알고 있다면 아래 비교표와 실행 절차로 바로 진행할 수 있습니다.
+처음 배우는 분은 [접속 방식 입문 가이드](docs/explanation/beginner-guide.md)를 먼저 읽으십시오. 각 방법을 **적용 대상 → 선택 이유 → 구성 요소 → 실행 방법** 순서로 설명합니다. 용어를 알고 있다면 아래 비교표와 실행 절차로 바로 진행할 수 있습니다.
 
-## 어떤 방법을 선택하나요
+## 방법별 적용 대상
 
-| 하고 싶은 일 | 먼저 검토할 방법 | 접속할 때 달라지는 점 |
+| 접속 목적 | 먼저 검토할 방법 | 접속할 때 달라지는 점 |
 |---|---|---|
 | 본인이 SSH·DB·RDP 또는 개발 웹 화면 몇 개 사용 | Bastion 고정 포트 포워딩 | 터널을 열고 `127.0.0.1:로컬포트`에 접속 |
+| ADB SQL·APEX·Database Actions 사용 | Private Endpoint + Bastion 또는 VPN | SQL 포트와 웹 443 구분, TLS·wallet·DNS 준비 |
 | 여러 사설 웹을 오가며 브라우저 프록시 설정 가능 | Bastion SOCKS5 | 브라우저에 중계 주소를 지정한 뒤 사설 URL 사용 |
 | 여러 사설 TCP 서비스에 앱별 프록시 설정 없이 접근 | sshuttle | Bastion 뒤 Linux VM을 경유하도록 선택한 사설 대역 연결을 중계 |
 | 여러 앱으로 장시간 개발·관리 | 기존 회사 VPN 또는 Tailscale | 연결된 사설망 주소 또는 Tailscale 주소 사용 |
@@ -46,7 +50,26 @@ flowchart TD
 
 처음에는 **고정 포워딩으로 본인의 접속 하나를 성공시키는 것**부터 권합니다. 서비스가 늘거나 연결 시간이 불편해지면 다른 방식을 선택합니다. [방법별 비교와 제약](docs/guides/alternatives.md) · [주소와 접속 원리 설명](docs/explanation/access-model.md)
 
-## 각 방식에서 무엇이 연결되나요
+## 구성 순서
+
+선택 후에는 **① 출발지·목적지·포트 확인 → ② 경로 구성 → ③ 방화벽·DNS 허용 → ④ TLS·로그인 설정 → ⑤ 실제 작업·차단·종료 확인** 순서로 진행합니다. 터널 실행만으로 접속 검증이 끝나지는 않습니다.
+
+## 보안 효과와 조건
+
+핵심은 **인터넷에서 서버·DB에 직접 연결할 수 있는 범위를 줄이고, 정해진 입구에서 접근자를 통제하는 것**입니다. 사설 IP만 사용해도 내부 경로가 과도하게 열려 있으면 위험은 남습니다.
+
+| 구성 | 줄이는 위험 | 필요한 통제 |
+|---|---|---|
+| Public IP 제거·Private Endpoint | 인터넷의 직접 스캔·접속 시도에 노출되는 범위 | 기존 공개 경로 차단, 필요한 출발지·포트만 허용 |
+| Bastion 고정 포워딩 | 상시 공개 SSH·DB 포트, 장기간 남는 임시 관리 접속 | OCI IAM·출구 IP allowlist·개인 키·목적지 제한·TTL |
+| SOCKS5·sshuttle | 대상마다 공개 관리 포트를 여는 구성 | 중계 가능한 목적지가 넓어질 수 있으므로 NSG·계정 권한 최소화 |
+| Tailscale | 관리 포트의 인터넷 직접 노출 | 사용자·기기·목적지별 접근 정책, 퇴사·분실 기기 회수 |
+| Cloudflare Tunnel·Access | 원본 서버의 공개 인바운드와 익명 웹 접근 | Access 인증 필수, 원본 우회 경로 차단, backend 구간 TLS 검토 |
+| LB·API Gateway | 여러 backend의 직접 노출, 분산된 접속 입구 | HTTPS·사용자/API 인증·요청 제한·backend 접근 제한 |
+
+SSH 터널·VPN의 암호화 범위와 최종 서비스의 TLS 범위는 다릅니다. **DB·HTTPS의 인증서 검증과 앱 인증은 유지**합니다. 생성·접속 이벤트는 관련 감사 로그로 확인하고, SQL 실행·앱 요청 내역은 DB·앱 로그를 별도로 구성합니다. 터널만으로 모든 작업 내용이 기록되지는 않습니다. [상세 보안 기준](docs/explanation/security.md)
+
+## 연결 흐름
 
 아래 경로에서 화살표는 접속·요청의 흐름을 단순화한 것입니다. `사설 VM`은 인터넷에서 바로 접속할 수 있는 주소 없이 운영하는 클라우드 서버입니다. `127.0.0.1`은 그 주소를 입력한 PC 자신을 뜻합니다.
 
@@ -90,7 +113,7 @@ OCI_ACCESS_CONFIG=config/access.example.json sh scripts/workflow.sh plan dev-web
 
 예제와 도우미가 모든 인프라·계정·서비스 설치를 끝내 주는 것은 아닙니다. 외부 서비스의 사용 가능 여부와 요금도 확인합니다. 준비 항목과 설치 안내는 [방법별 쉬운 실행](docs/guides/easy-workflows.md)에 있습니다.
 
-**Tailscale을 설치한 VM 자체에 Public IP가 필요한 것은 아닙니다.** 사설 VM이 NAT 같은 경로로 Tailscale 서비스에 필요한 외부 연결을 시작할 수 있어야 합니다. NAT Gateway에는 외부 통신용 Public IP가 있지만 VM에 직접 할당하는 것과는 다릅니다. NAT와 방화벽 특성에 따라 직접 UDP 연결 또는 암호화된 중계 연결을 사용하며, NAT를 만들었다는 사실만으로 직접 연결과 성능이 보장되지는 않습니다. [그림과 연결 조건](docs/explanation/beginner-guide.md#tailscale은-vm에-public-ip가-없어도-되나요)
+**Tailscale을 설치한 VM 자체에 Public IP가 필요한 것은 아닙니다.** 사설 VM이 NAT 같은 경로로 Tailscale 서비스에 필요한 외부 연결을 시작할 수 있어야 합니다. NAT Gateway에는 외부 통신용 Public IP가 있지만 VM에 직접 할당하는 것과는 다릅니다. NAT와 방화벽 특성에 따라 직접 UDP 연결 또는 암호화된 중계 연결을 사용하며, NAT를 만들었다는 사실만으로 직접 연결과 성능이 보장되지는 않습니다. [그림과 연결 조건](docs/explanation/beginner-guide.md#tailscale의-nat-연결-조건)
 
 ## 첫 실제 접속은 고정 포워딩으로
 
@@ -146,7 +169,7 @@ sh scripts/workflow.sh infra load-balancer show
 
 plan은 OCI를 조회하고 로컬 계획을 만들지만 자원을 생성하지 않습니다. 인증서·백엔드 방화벽 연결·DNS·사용자 인증 등 후속 설정은 [인프라 구성](docs/guides/infrastructure.md)에서 확인합니다. 실제 Public IP 제거는 [전환과 복구 절차](docs/guides/migration.md)를 따릅니다.
 
-## 어디까지 검증했나요
+## 검증 범위
 
 | 범위 | 확인한 내용 | 추가 환경 검증 |
 |---|---|---|
