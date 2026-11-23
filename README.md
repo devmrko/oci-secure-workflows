@@ -197,7 +197,7 @@ sh scripts/workflow.sh cloudflare run \
   --token-file "$HOME/.cloudflared/oci-demo.token" --protocol http2 --execute
 ```
 
-**확인:** 익명 요청은 Access 로그인으로 이동하고, 허용 사용자는 로그인 후 원본 응답을 받아야 합니다. 위조 쿠키도 원본에 접근하지 못해야 합니다. **종료:** `Ctrl+C`로 커넥터·가상 웹을 종료하고 전용 앱·정책·터널·DNS·임시 토큰을 정리합니다. 시험에서는 이 셸 도우미와 실제 로그인을 확인했으며 **OCI NAT Gateway에 배치한 connector는 별도 검증 대상**입니다.
+**확인:** 익명 요청은 Access 로그인으로 이동하고, 허용 사용자는 로그인 후 원본 응답을 받아야 합니다. 위조 쿠키도 원본에 접근하지 못해야 합니다. **종료:** `Ctrl+C`로 커넥터·가상 웹을 종료하고 전용 앱·정책·터널·DNS·임시 토큰을 정리합니다. Dashboard 관리 방식은 이 셸 도우미와 실제 로그인을 확인했습니다. 별도로 **Public IP 없는 OCI VM → NAT Gateway → Quick Tunnel** 경로에서 HTTP/2·QUIC 외부 응답도 확인했습니다.
 
 [가상 웹 준비 → Dashboard 구성 → 로그인·차단 시험 → 정리 전체 절차](docs/guides/cloudflare.md)
 
@@ -223,7 +223,7 @@ plan은 OCI를 조회하고 로컬 계획을 만들지만 자원을 생성하지
 | 셸·Python 도우미 | 40개 테스트 통과, 미리보기·인자 전달·실패 처리·패키지 제외 규칙 | 환경별 계정·키·네트워크 연결 |
 | ADB Worksheet | 기존 점프 VM의 고정 터널·SOCKS5 두 경로에서 실제 로그인 화면·TLS·리소스 로딩 확인 | 관리형 Bastion·VPN 경유, 로그인·SQL·SSO |
 | sshuttle·OpenSSH | 실제 sshuttle 옵션 파서와 `ssh -G` 구성 해석 | sudo 방화벽 변경·원격 Python·사설 트래픽 |
-| Cloudflare | 실제 named tunnel·Access 로그인 후 원본 응답, 익명·위조 쿠키 차단, 로컬 ingress 검사 | OCI NAT 경유·다른 사용자·IdP·성능. [실행·검증](docs/guides/cloudflare.md) |
+| Cloudflare | named tunnel·Access 로그인/익명 차단, Public IP 없는 OCI VM의 NAT 경유 HTTP/2·QUIC 응답, 로컬 ingress 검사 | 다른 사용자·IdP·성능. [실행·검증](docs/guides/cloudflare.md) |
 | Tailscale | 대체 실행 파일로 셸 호출과 전달 인자 검사 | 실제 로그인·경로·접근 정책 |
 | Terraform | 네 스택 validate와 8개 mock plan 테스트 통과 | 실제 plan/apply·서비스 동작·정책 finding 해소 |
 

@@ -91,7 +91,7 @@ cloudflared와 테스트 웹 서버를 `Ctrl+C`로 종료합니다. 등록된 �
 
 ## 실제 검증 범위
 
-2026-11-23, cloudflared 2026.11.1·macOS 사설 LAN 호스트·루프백 가상 웹 서버로 확인했습니다.
+2026-11-23, cloudflared 2026.11.1과 루프백 가상 웹 서버로 확인했습니다. Access는 macOS에서, NAT 전송은 OCI 사설 VM에서 각각 시험했습니다.
 
 | 시험 | 결과 |
 |---|---|
@@ -100,6 +100,40 @@ cloudflared와 테스트 웹 서버를 `Ctrl+C`로 종료합니다. 등록된 �
 | Dashboard 관리 named tunnel | 원격 ingress 수신, 이 저장소 셸 도우미로 실행 성공 |
 | Access 익명 요청·위조 쿠키 | HTTP 302로 Access 로그인 이동, 원본 응답 미제공 |
 | 허용된 본인 계정 | 실제 브라우저 로그인 후 가상 서버 응답 확인, 커넥터의 HTTP 200 지표 확인 |
-| 시험 범위 밖 | **OCI NAT Gateway를 통과하는 connector 배치**, 다른 사용자·IdP·PIN, 고가용성·성능 |
+| OCI NAT 전송 경로 | Public IP 없는 단일 NIC VM에서 HTTP/2·QUIC 각각 외부 HTTPS 200·원본 표식 일치, 출구 IP와 NAT IP 일치 |
+| 시험 범위 밖 | 다른 사용자·IdP·PIN, 고가용성·성능 |
 
-이번 결과를 OCI NAT 경유 검증으로 일반화하지 않습니다. [전체 검증 결과](../validation.md) · [Quick Tunnel 공식 범위](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/)
+NAT 전송과 Access 인증은 별도 시험으로 수행했습니다. [전체 검증 결과](../validation.md) · [Quick Tunnel 공식 범위](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/)
+
+
+## OCI NAT 출구 시험
+
+Public IP 없는 VM에서 터널이 연결되는지 확인하는 절차입니다. **Quick Tunnel은 인증 없는 임시 공개 URL을 만들므로 가상 응답만 사용합니다.** 계정·도메인 없이 전송 경로를 확인할 수 있지만 Access 인증 시험을 대신하지 않습니다.
+
+```text
+외부 PC → Cloudflare → 이미 연결된 터널 → NAT → 사설 VM의 cloudflared → 127.0.0.1:19090
+                                         연결 시작 방향: 사설 VM → NAT → Cloudflare
+관리 SSH: PC → 기존 점프 VM → 사설 VM (웹 요청 경로와 별도)
+```
+
+1. VM의 모든 VNIC에 Public IP·공인 IPv6가 없는지 확인합니다. 서브넷의 기본 경로를 `0.0.0.0/0 → NAT Gateway`로 설정하고 IGW 경로가 없는지 확인합니다. 공유 라우트 대신 테스트 전용 라우트를 사용합니다.
+2. cloudflared·Python 3를 준비하고 앞의 가상 웹을 실행합니다. 웹 포트 19090은 외부 인바운드로 열지 않습니다. 관리 SSH는 점프 VM의 사설 주소에서만 허용합니다.
+3. VM에서 외부에 보이는 IP와 Console의 NAT 공인 IP가 일치하는지 확인합니다. 아래 주소는 해당 서비스에 출구 IP를 전달합니다.
+
+```sh
+curl --fail --silent --show-error https://www.cloudflare.com/cdn-cgi/trace
+```
+
+4. 같은 VM의 다른 터미널에서 HTTP/2 터널을 실행합니다. 출력된 임시 HTTPS URL을 PC에서 열어 원본 문자열을 확인합니다. `curl`을 사용한다면 인증서 검증을 끄지 않습니다.
+
+```sh
+cloudflared tunnel --no-autoupdate --protocol http2 --url http://127.0.0.1:19090
+```
+
+5. 터널을 `Ctrl+C`로 종료한 뒤 QUIC도 별도로 시험합니다. `Registered tunnel connection`에 각각 `protocol=http2`, `protocol=quic`가 나타나는지 확인합니다.
+
+```sh
+cloudflared tunnel --no-autoupdate --protocol quic --url http://127.0.0.1:19090
+```
+
+6. 터널·웹 서버를 종료하고 전용 VM·부트 볼륨·서브넷·라우트·보안 목록을 삭제합니다. 재사용한 NAT Gateway와 기존 자원은 유지합니다. VM·볼륨·트래픽은 계정 조건에 따라 비용이 발생하므로 시험 시간을 제한합니다.
