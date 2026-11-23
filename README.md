@@ -8,7 +8,7 @@ OCI 서버의 Public IP를 제거한 뒤에도 개발·관리와 웹/API 제공�
 
 처음이면 [도구 이름과 역할](docs/explanation/beginner-guide.md#도구-개요)부터 읽습니다. [여러 서버 동시 접속](docs/guides/multiple-targets.md) · [ADB·PaaS·SaaS 접속 범위](docs/guides/managed-services.md)
 
-ADB SQL Worksheet는 [사설 HTTPS 접속](docs/guides/worksheet.md)을 따릅니다. 도메인을 유지한 고정 터널과 Chrome 연결 주소 매핑을 제공하며, 기존 점프 VM 경유로 실제 로그인 화면과 리소스 로딩을 확인했습니다.
+ADB SQL Worksheet는 [사설 HTTPS 접속](docs/guides/worksheet.md)을 따릅니다. 도메인을 유지한 고정 터널과 Chrome 연결 주소 매핑을 제공하며, 기존 점프 VM 경유로 실제 로그인 화면과 리소스 로딩을 확인했습니다. [DNS·라우팅 처리 과정](docs/guides/worksheet.md#dns와-라우팅이-처리되는-위치)은 PC가 로컬 터널에 연결하고 경유지가 ADB 사설 IP에 연결하는 원리, SOCKS5 원격 DNS와 HTTPS 이름 유지를 설명합니다.
 
 **서버에 들어가서 작업하는 일**, **다른 사람에게 서비스를 제공하는 일**, **서버가 외부에 요청하는 일**을 먼저 구분합니다. 예를 들어 웹 화면 하나를 본인이 확인하는 상황과, 고객이 그 웹을 계속 이용하는 상황은 다른 경로를 사용합니다.
 

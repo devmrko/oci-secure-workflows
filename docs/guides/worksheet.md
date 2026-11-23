@@ -17,6 +17,80 @@ flowchart LR
 
 아래 고정 포워딩 방식은 DNS 결과와 관계없이 목적지 사설 IP를 명시합니다. SOCKS5를 사용할 경우에는 [원격 DNS 경로](#socks5-대안)를 확인합니다.
 
+## DNS와 라우팅이 처리되는 위치
+
+**DNS는 목적지 IP를 찾고, 라우팅은 그 IP로 가는 경로를 결정합니다.** PC가 Worksheet 도메인을 ADB 사설 IP로 해석하더라도, VPN 등으로 그 사설망에 도달하지 못하면 접속할 수 없습니다. hosts 파일에 사설 IP만 등록해도 경로는 생기지 않습니다.
+
+SSH 터널에서는 **PC가 ADB 사설 IP에 직접 연결하지 않습니다. PC는 SSH 경유지에 연결하고, 경유지가 ADB에 연결합니다.** 아래 도메인·IP는 원리를 설명하는 예시이며 실제 서비스 주소가 아닙니다.
+
+### 고정 포워딩: 브라우저의 연결 주소를 로컬 포트로 지정
+
+점프 VM을 이용하는 OpenSSH 예시는 다음과 같습니다. 관리형 Bastion의 실제 실행은 아래 [HTTPS 터널 준비](#1-https-터널-준비)의 도우미를 사용합니다.
+
+```sh
+ssh -N -L 127.0.0.1:18443:10.20.1.20:443 opc@JUMP_HOST
+```
+
+이 명령은 PC의 `18443`으로 들어온 연결을 SSH로 전달하고, 점프 VM에서 `10.20.1.20:443`으로 새 연결을 만들게 합니다. **터널을 열기만 하면 원래 도메인의 브라우저 요청이 자동으로 터널을 타는 것은 아닙니다.** `worksheet` 도우미는 분리된 Chrome 창에 다음 설정을 추가합니다.
+
+```text
+--host-resolver-rules="MAP worksheet.example.com:443 127.0.0.1:18443"
+```
+
+```text
+주소창: https://worksheet.example.com/ords/sql-developer
+    ↓ Chrome의 해당 도메인 연결 주소 매핑
+PC의 127.0.0.1:18443 → 로컬 SSH 프로그램
+    ↓ 이미 연결된 SSH 통신으로 데이터 전달
+점프 VM → 새 TCP 연결 → ADB 사설 IP 10.20.1.20:443
+```
+
+| 실제 연결 구간 | 사용 경로 |
+|---|---|
+| Chrome → 127.0.0.1:18443 | PC 내부 루프백 |
+| PC의 SSH → 점프 VM | PC의 기존 네트워크를 통한 SSH 접속 경로 |
+| 점프 VM → ADB 사설 IP:443 | 점프 VM과 VCN의 사설 경로 |
+
+PC의 OS 라우팅 테이블에 ADB 대역을 추가하지 않습니다. Chrome이 이 호스트의 연결 주소를 로컬 포트로 지정하므로, 이 고정 방식에서는 ADB 도메인의 일반 DNS 조회 결과에 의존하지 않습니다. SSH 설정의 목적지 사설 IP가 정확해야 하며, 그 IP까지의 경로는 경유지에 있어야 합니다.
+
+### HTTPS: 연결 주소와 서비스 이름을 분리
+
+| 항목 | 유지하거나 변경하는 값 |
+|---|---|
+| 주소창·HTTP 서비스 호스트 이름 | 원래 Worksheet 도메인 유지 |
+| TLS에서 요청하는 서버 이름(SNI)·인증서 이름 확인 | 원래 Worksheet 도메인 유지 |
+| Chrome의 실제 TCP 연결 목적지 | 127.0.0.1:18443으로 변경 |
+| SSH 경유지가 연결하는 목적지 | ADB 사설 IP:443 |
+
+브라우저와 ADB 사이의 TLS 데이터는 SSH가 그대로 전달합니다. 점프 VM에서 HTTPS를 해독하거나 인증서를 교체하지 않습니다. 주소창을 `https://localhost:18443`으로 바꾸면 서비스 이름도 localhost로 바뀌므로 이 구성과 다릅니다. curl의 `--connect-to`도 연결 주소만 바꾸고 TLS 이름은 유지합니다. [공식 동작](https://curl.se/libcurl/c/CURLOPT_CONNECT_TO.html)
+
+### SOCKS5: 도메인 조회와 목적지 연결을 경유지에 요청
+
+고정 포워딩이 목적지 IP·포트를 미리 지정하는 것이라면, SOCKS5는 브라우저가 요청마다 목적지를 전달하는 방식입니다. 점프 VM에 대한 `ssh -D 127.0.0.1:1080`과 브라우저의 SOCKS5·원격 DNS 설정을 사용하면 다음과 같이 동작합니다.
+
+```text
+브라우저 → PC의 SOCKS5 127.0.0.1:1080
+           요청: worksheet.example.com:443에 연결
+    ↓ SSH로 요청 전달
+점프 VM의 DNS: worksheet.example.com → ADB 사설 IP
+    ↓ 점프 VM의 네트워크 경로로 연결
+ADB 사설 IP:443
+```
+
+PC는 로컬 SOCKS5에 연결하고, 도메인 조회와 ADB 연결은 경유지에서 처리합니다. 브라우저의 접속용 DNS를 경유지에서 처리하도록 설정해야 합니다. Chrome의 SOCKS5는 프록시 측 조회를 사용하고, Firefox는 원격 DNS 옵션을 확인합니다. [Chromium 공식 설명](https://github.com/chromium/chromium/blob/main/net/docs/proxy.md)
+
+경유지 DNS가 공용 IP를 반환하면 공용 주소로 연결을 시도하므로, **도메인이 경유지에서 ADB 사설 IP로 해석되는지** 확인합니다. SOCKS5를 설정해도 경유지에 없는 사설 경로가 만들어지지는 않습니다.
+
+| 방식 | ADB 연결 주소 결정 | ADB에 연결하는 곳 | PC에 ADB 사설망 경로 필요 |
+|---|---|---|---|
+| 고정 포워딩 + Chrome 매핑 | SSH 설정에 사설 IP 지정 | SSH 경유지 | 불필요 |
+| SOCKS5 + 원격 DNS | 경유지의 DNS 조회 | SSH 경유지 | 불필요 |
+| VPN 직접 접속 | PC의 DNS 조회 | PC | 필요 |
+
+두 터널 방식 모두 경유지에서 ADB까지의 경로·443 보안 규칙이 필요합니다. 점프 VM 시험에서는 해당 VM의 사설 IP를, 관리형 Bastion 구성에서는 Bastion 사설 엔드포인트 IP를 허용 출발지로 검토합니다. **경유지 → ADB Private Endpoint 구간에는 IGW·NAT가 필요하지 않습니다.** PC → 경유지의 관리 접속 경로는 별도로 필요합니다.
+
+Chrome 고정 매핑은 지정한 호스트의 443에만 적용합니다. 다른 도메인의 사설 리소스나 SSO로 이동하면 해당 목적지의 DNS·경로·인증을 별도로 확인합니다. 아래 실제 검증은 기존 점프 VM의 로그인 화면·리소스 로딩까지이며, 관리형 Bastion·VPN·SSO 성공을 의미하지 않습니다.
+
 ## 1. HTTPS 터널 준비
 
 [Bastion 준비](bastion.md)를 완료하고 `config/managed-services.json`의 `adb-worksheet`에 실제 ADB 사설 IP를 입력합니다. 로컬 포트는 18443, 대상 포트는 443입니다.
