@@ -52,6 +52,24 @@ flowchart TD
 
 처음에는 **고정 포워딩으로 본인의 접속 하나를 성공시키는 것**부터 권합니다. 서비스가 늘거나 연결 시간이 불편해지면 다른 방식을 선택합니다. [방법별 비교와 제약](docs/guides/alternatives.md) · [주소와 접속 원리 설명](docs/explanation/access-model.md)
 
+## IGW·NAT 필요 조건
+
+**사설 VM에서 Tailscale·Cloudflare Tunnel을 사용하거나 외부 API를 호출하는 경우, 인터넷 출구는 NAT Gateway로 구성할 수 있습니다. VM의 Public IP와 별도 Internet Gateway(IGW)는 필요하지 않습니다.** NAT 경로·DNS·필요한 외부 포트 허용·도구별 인증은 준비해야 합니다.
+
+| 접속 구성 | IGW | NAT | 추가 조건 |
+|---|---|---|---|
+| 사설 VM의 Tailscale·Cloudflare Tunnel | **불필요** | **인터넷 출구로 사용 가능** | VM이 먼저 외부 연결 시작, 외부 서비스·포트 허용 |
+| 사설 VM의 외부 API·패키지 다운로드 | **불필요** | **일반적인 구성** | 사설 서브넷의 `0.0.0.0/0 → NAT` 경로 |
+| OCI 관리형 Bastion의 사설 대상 포워딩 | **불필요** | **그 접속을 위해서는 불필요** | 공식 생성 전제인 **Service Gateway와 경로**, 대상 포트 허용 |
+| sshuttle로 사설 목적지 연결 | **경유 경로에 따라 결정** | **사설 목적지 연결 자체에는 불필요** | 관리형 Bastion 또는 점프 VM의 준비 조건 적용 |
+| 인터넷에서 Public IP 점프 VM으로 직접 SSH | **필요** | **대체 불가** | 점프 VM의 Public IP·공용 서브넷·IGW 경로·SSH 허용 |
+| VCN 내부 앱 → ADB Private Endpoint | **불필요** | **불필요** | 사설 경로·DNS·보안 규칙·DB 인증 |
+| Service Gateway → 지원 OSN 서비스 | **불필요** | **불필요** | 지원 서비스·리전·SGW 경로·서비스 인증 |
+
+**OCI NAT Gateway 뒤에 IGW를 추가 연결하는 구성은 필요하지 않습니다.** 반대로 NAT만으로 인터넷에서 VM에 직접 SSH 접속할 수는 없습니다. NAT는 VM이 시작한 연결과 응답을 처리합니다. 관리형 Bastion의 공용 접속 주소는 OCI가 제공하며, 고객 VCN에 IGW를 추가한다는 뜻이 아닙니다.
+
+이 표는 **표시한 통신 경로 기준**입니다. 같은 VCN에서 공용 LB·공용 API Gateway 등 다른 공개 입구도 운영한다면 그 입구에 필요한 IGW는 별도로 유지합니다. 외부 API용 NAT와 관리형 Bastion용 Service Gateway도 서로 대체하지 않습니다. [IGW 공식 범위](https://docs.oracle.com/en-us/iaas/Content/Network/Tasks/managingIGs.htm) · [NAT 공식 범위](https://docs.oracle.com/en-us/iaas/Content/Network/Tasks/NATgateway.htm) · [Bastion 생성 전제](https://docs.oracle.com/en-us/iaas/Content/Bastion/Tasks/create-bastion.htm)
+
 ## 구성 순서
 
 선택 후에는 **① 출발지·목적지·포트 확인 → ② 경로 구성 → ③ 방화벽·DNS 허용 → ④ TLS·로그인 설정 → ⑤ 실제 작업·차단·종료 확인** 순서로 진행합니다. 터널 실행만으로 접속 검증이 끝나지는 않습니다.

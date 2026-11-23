@@ -123,6 +123,8 @@ sh scripts/workflow.sh sshuttle dev-ssh --cidr 10.0.1.0/24 --cidr 10.0.2.0/24
 
 ## Tailscale
 
+**사설 VM에 Public IP·IGW는 불필요합니다. NAT Gateway를 외부 출구로 사용할 수 있습니다.** NAT 경로·DNS·필요한 외부 통신을 허용하고 계정·접근 정책을 준비합니다.
+
 PC와 서버를 조직의 Tailscale 네트워크에 등록해 장시간 사설 접속에 사용합니다. Bastion을 경유하지 않는 구성은 Bastion TTL과 독립됩니다. 외부 계정·중계 경로 사용이 조직 정책에 맞는지 확인하고 [공식 클라이언트](https://tailscale.com/download)를 설치합니다. 이 도우미는 클라이언트를 설치하거나 조직의 사용 승인을 대신하지 않습니다.
 
 **VM의 Public IP는 필수가 아닙니다.** Tailscale을 설치하는 사설 VM 또는 subnet router에서 NAT 같은 외부 통신 경로·라우트·DNS·보안 규칙을 준비해야 합니다. 제어 서비스와 DERP 중계에는 HTTPS TCP 443 연결이 사용되고, 직접 UDP 연결 가능성은 양쪽 NAT와 방화벽 조건에 따라 달라집니다. [NAT와 중계 연결 그림](../explanation/beginner-guide.md#tailscale의-nat-연결-조건)
@@ -171,6 +173,8 @@ tailscale status
 명령 생성과 셸 호출 경로는 모의 클라이언트로 검증했습니다. 실제 Tailscale 로그인·라우팅·조직 ACL은 시험하지 않았습니다. [Subnet router 구성](https://tailscale.com/docs/features/subnet-routers)
 
 ## Cloudflare Tunnel
+
+**사설 VM이 먼저 Cloudflare로 연결하므로 NAT 출구로 구성할 수 있으며, VM Public IP·IGW·인터넷 인바운드 개방은 불필요합니다.** 외부 연결에 필요한 라우트·DNS·포트 허용과 Access 정책은 별도입니다.
 
 사용자가 브라우저 로그인 후 웹 URL로 접속하도록 할 때 선택합니다. 서버의 `cloudflared`가 외부로 연결하고 Cloudflare Access가 사용자 인증을 담당합니다. OCI 서버에는 필요한 외부 통신 경로가 있어야 합니다.
 

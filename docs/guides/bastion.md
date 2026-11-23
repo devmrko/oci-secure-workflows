@@ -11,6 +11,9 @@
 5. 대상 NSG 또는 Security List에서 Bastion **사설 엔드포인트 IP/32 → 필요한 TCP 포트**를 허용합니다. 대상 OS 방화벽도 확인합니다.
 6. Bastion이 사용하는 서브넷의 egress 규칙이 해당 대상과 포트에 도달할 수 있어야 합니다.
 7. Bastion 조회와 세션 생성·조회·삭제 IAM 권한이 필요합니다. 관리자에게 특정 Bastion으로 범위를 제한해 요청합니다.
+8. [공식 Bastion 생성 문서](https://docs.oracle.com/en-us/iaas/Content/Bastion/Tasks/create-bastion.htm)에 명시된 **Service Gateway와 해당 경로 규칙**을 준비합니다. 이 저장소의 Bastion Terraform 예제는 기존 네트워크를 사용하며 Service Gateway를 자동 생성하지 않습니다.
+
+**관리형 Bastion으로 사설 대상에 포워딩하려고 고객 VCN에 IGW나 NAT를 추가할 필요는 없습니다.** Service Gateway 준비와 대상 접근 규칙은 필요합니다. Public IP를 붙인 자체 점프 VM의 SSH 접속은 별도 구성이며, 인터넷에서 직접 접속하려면 IGW가 필요합니다. [방식별 비교](../../README.md#igwnat-필요-조건)
 
 Bastion은 단일 VCN에 연결됩니다. 리전 이름만 같다고 다른 VCN의 대상을 사용할 수 있다고 가정하지 마십시오. 관리 대상 VCN별 Bastion을 설정에 구분해 등록합니다.
 

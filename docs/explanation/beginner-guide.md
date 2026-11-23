@@ -149,6 +149,8 @@ flowchart LR
 
 ### Tailscale의 NAT 연결 조건
 
+**인터넷 출구로 NAT Gateway를 사용할 수 있으며, 별도 IGW와 VM Public IP는 필요하지 않습니다.** 사설 서브넷에 NAT로 향하는 경로와 DNS·필요한 외부 통신 허용을 준비합니다. NAT 자원 생성만으로 설정이 끝나지는 않습니다. [방식별 IGW·NAT 조건](../../README.md#igwnat-필요-조건)
+
 **VM 자체에 Public IP를 붙이지 않고 NAT를 통해 외부 연결을 시작할 수 있으면 사용할 수 있습니다.** Tailscale을 설치한 VM이 외부 인증·연결 조정 서비스와 필요한 중계 서비스에 도달해야 합니다. OCI NAT Gateway는 사설 VM의 요청을 자기 Public IP로 내보내고 그 연결의 응답을 되돌려 줍니다. VM에 Public IP를 직접 할당하는 것과 다른 구성입니다.
 
 아래는 **DERP라는 Tailscale 중계 서버를 사용하는 경우**입니다. 화살표는 각 기기가 먼저 외부 연결을 시작하는 방향을 나타냅니다.
@@ -243,6 +245,8 @@ flowchart LR
 [준비부터 실행까지](../guides/easy-workflows.md#cloudflare-tunnel)
 
 ## 8. NAT: 서버의 외부 통신
+
+**OCI NAT Gateway는 별도 IGW 없이 사설 VM의 인터넷 외부 통신을 제공합니다.** Internet Gateway와 NAT Gateway를 직렬로 연결하는 구성은 필요하지 않습니다. 외부에서 먼저 들어오는 SSH·웹 연결은 이 NAT 경로로 받을 수 없습니다.
 
 **적용 대상:** 사설 서버가 외부 AI API를 호출하거나 운영체제 업데이트 파일을 받으려고 합니다.
 
