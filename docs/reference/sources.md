@@ -39,6 +39,8 @@
 
 ## 관리형 서비스 접속
 
+- [Chromium의 호스트·포트 매핑 예제](https://chromium.googlesource.com/website/+/refs/heads/main/site/quic/playing-with-quic/index.md), [curl connect-to](https://curl.se/docs/manpage.html#--connect-to): 원래 URL·TLS 이름과 실제 연결 주소 분리. 이 저장소는 인증서 오류 무시 옵션을 사용하지 않습니다. 실제 기존 점프 VM을 경유해 Worksheet 화면을 확인했습니다.
+
 - [ADB 네트워크 선택](https://docs.oracle.com/en-us/iaas/autonomous-database-serverless/doc/network-access-options.html), [Private Endpoint](https://docs.oracle.com/en-us/iaas/autonomous-database-serverless/doc/private-endpoints-autonomous.html): 공개 ACL·사설 endpoint·공개 접속 병행 여부, NSG·DNS.
 - [ADB 연결과 TLS/mTLS](https://docs.oracle.com/en-us/iaas/autonomous-database-serverless/doc/connect-introduction.html): mTLS 1522, TLS 1521/1522와 wallet 요구 구분.
 - [Bastion DB 연결](https://docs.oracle.com/en-us/iaas/Content/Bastion/Tasks/connect-port-forwarding.htm), [ADB 터널 구성 예](https://docs.oracle.com/en/solutions/migrate-tomcat-workloads/migrate-application-database.html): TCP 중계와 클라이언트 설정. 후자의 원래 DB 이름 유지 방식을 참고하되 공개 점프 VM 대신 관리형 Bastion 사용.

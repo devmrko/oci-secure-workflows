@@ -2,6 +2,8 @@
 
 도구 설명은 [도구 개요](../explanation/beginner-guide.md#도구-개요), 서버 여러 대 연결은 [동시 접속 구성](multiple-targets.md), ADB는 [관리형 서비스 접속](managed-services.md)을 확인합니다.
 
+ADB SQL Worksheet는 [도메인을 유지한 HTTPS 터널·브라우저 실행](worksheet.md)을 사용합니다. `workflow.sh worksheet`는 기존 터널 위에서 분리된 Chrome 창을 실행하는 도우미입니다.
+
 `sh scripts/workflow.sh` 하나로 접속 방법을 선택합니다. 기본은 명령 미리보기이며, `--execute`에서 해당 도구를 실행합니다. 이 문서의 실제 실행 명령은 계정·키·네트워크 준비를 마친 뒤 사용합니다. 도구 설치와 계정 생성, 네트워크 설정 전체를 자동으로 처리하지는 않습니다.
 
 어떤 방법을 써야 할지 아직 정하지 못했다면 [상황별 입문 그림](../explanation/beginner-guide.md)을 먼저 읽으십시오. 이 문서는 선택한 방법의 실제 준비·실행·확인·종료 순서를 다룹니다.

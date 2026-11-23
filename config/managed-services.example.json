@@ -9,6 +9,10 @@
     }
   },
   "targets": {
+    "adb-worksheet": {
+      "region": "ap-seoul-1", "mode": "forward",
+      "host": "10.0.2.20", "port": 443, "local_port": 18443
+    },
     "adb-mtls": {
       "region": "ap-seoul-1", "mode": "forward",
       "host": "10.0.2.20", "port": 1522, "local_port": 11522

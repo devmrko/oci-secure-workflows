@@ -8,6 +8,8 @@ OCI 서버의 Public IP를 제거한 뒤에도 개발·관리와 웹/API 제공�
 
 처음이면 [도구 이름과 역할](docs/explanation/beginner-guide.md#도구-개요)부터 읽습니다. [여러 서버 동시 접속](docs/guides/multiple-targets.md) · [ADB·PaaS·SaaS 접속 범위](docs/guides/managed-services.md)
 
+ADB SQL Worksheet는 [사설 HTTPS 접속](docs/guides/worksheet.md)을 따릅니다. 도메인을 유지한 고정 터널과 Chrome 연결 주소 매핑을 제공하며, 기존 점프 VM 경유로 실제 로그인 화면과 리소스 로딩을 확인했습니다.
+
 **서버에 들어가서 작업하는 일**, **다른 사람에게 서비스를 제공하는 일**, **서버가 외부에 요청하는 일**을 먼저 구분합니다. 예를 들어 웹 화면 하나를 본인이 확인하는 상황과, 고객이 그 웹을 계속 이용하는 상황은 다른 경로를 사용합니다.
 
 ```mermaid
@@ -173,7 +175,8 @@ plan은 OCI를 조회하고 로컬 계획을 만들지만 자원을 생성하지
 
 | 범위 | 확인한 내용 | 추가 환경 검증 |
 |---|---|---|
-| 셸·Python 도우미 | 35개 테스트 통과, 미리보기·인자 전달·실패 처리·패키지 제외 규칙 | 실제 계정·키·네트워크 연결 |
+| 셸·Python 도우미 | 38개 테스트 통과, 미리보기·인자 전달·실패 처리·패키지 제외 규칙 | 환경별 계정·키·네트워크 연결 |
+| ADB Worksheet | 기존 점프 VM의 고정 터널·SOCKS5 두 경로에서 실제 로그인 화면·TLS·리소스 로딩 확인 | 관리형 Bastion·VPN 경유, 로그인·SQL·SSO |
 | sshuttle·OpenSSH | 실제 sshuttle 옵션 파서와 `ssh -G` 구성 해석 | sudo 방화벽 변경·원격 Python·사설 트래픽 |
 | Cloudflare | 공식 cloudflared로 예제 ingress·호스트 매칭·404 규칙 검사 | 실제 터널·DNS·Access 허용과 거부 |
 | Tailscale | 대체 실행 파일로 셸 호출과 전달 인자 검사 | 실제 로그인·경로·접근 정책 |
@@ -183,7 +186,7 @@ plan은 OCI를 조회하고 로컬 계획을 만들지만 자원을 생성하지
 sh scripts/test.sh
 ```
 
-실제 클라이언트 도구가 없는 기본 테스트에서는 해당 옵션 검사가 skip될 수 있습니다. 35개 전체 검증을 재현하는 방법과 버전은 [검증 결과](docs/validation.md)에 있습니다. 현재는 실제 클라우드 트래픽 검증 전 단계의 도구이며 운영 검증 완료를 의미하지 않습니다.
+실제 클라이언트 도구가 없는 기본 테스트에서는 해당 옵션 검사가 skip될 수 있습니다. 38개 전체 검사와 실제 Worksheet 접속의 범위·버전은 [검증 결과](docs/validation.md)에 있습니다. 한 경로의 성공이 다른 서비스·테넌시의 운영 검증을 대신하지는 않습니다.
 
 ## 상세 문서와 배포 파일
 

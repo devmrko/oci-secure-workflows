@@ -2,13 +2,13 @@
 
 최종 문서·예제 검증: 2026-11-23. 기존 인프라 검증: 2026-11-22. 실행 환경: macOS arm64, Python 3.15.0, OCI CLI 3.88.0, Terraform 1.14.0, OCI provider 9.14.0.
 
-2026-11-23에는 전체 35개 테스트를 재실행해 통과했습니다. ADB·다중 접속 예제와 문서를 추가했으며 Terraform 코드는 변경하지 않았습니다.
+2026-11-23에는 Worksheet 브라우저 도우미 검사 3개를 추가해 전체 38개 테스트를 통과했습니다. 기존 점프 VM 경유의 실제 ADB Worksheet 사설 HTTPS 접속도 확인했습니다. Terraform 코드는 변경하지 않았습니다.
 
 ## 수행한 검증
 
 | 범위 | 결과 |
 |---|---|
-| Python unittest | 35개 통과, skip 없음. 기존 18개에 sshuttle 계획 7개, 추가 클라이언트·셸 연결 7개, 실제 cloudflared 설정 계약 3개 포함 |
+| Python unittest | 38개 통과, skip 없음. 기존 35개와 Worksheet의 URL·TLS 이름 유지·입력 제한·미리보기 무실행 검사 3개 |
 | 셸 진입점 | 미리보기 시 외부 프로그램 미실행, --execute 시 전달 인자·오류 코드, 다른 작업 디렉터리와 공백 경로를 실제 하위 프로세스로 검증. 외부 네트워크 클라이언트 실행은 기록용 대체 프로그램 사용 |
 | sshuttle 2.0.0 | 실제 패키지의 옵션 파서로 remote·CIDR·DNS 옵션 확인. 실제 방화벽·트래픽 시험과 별개 |
 | OpenSSH | 생성된 SSH 옵션을 실제 `ssh -G`로 해석, localhost 포트·host key alias 확인. 네트워크 접속 없음 |
@@ -22,8 +22,9 @@
 | Bash 구문 | `bash -n scripts/infra.sh` 통과 |
 | CLI 예제 | example 설정의 list, validate, plan 실행 확인 |
 | 문서 실행 경로 | README의 도움말·목록·고정 포워딩 계획·sshuttle 계획·Tailscale 미리보기·Cloudflare 미리보기 6개 명령 실행. 로컬 링크·제목 anchor와 전체 문서의 셸 블록 구문 검사 통과 |
-| 문서 구조·다이어그램 | Markdown 19개, 로컬 링크·제목 anchor 88개, 셸 블록 58개 구문 검사, Mermaid 11 파서로 그림 23개 문법 검사 통과. 브라우저 시각 렌더링 검사와 별개 |
-| ADB 예제 | 관리형 서비스 설정의 offline validate, mTLS 11522→1522·TLS 11521→1521·SOCKS 1080 계획 확인. 실제 DB·wallet·TLS 핸드셰이크 시험 없음 |
+| 문서 구조·다이어그램 | 로컬 링크·제목 anchor·셸 블록 구문과 Mermaid 11 파서로 그림 24개 문법 검사 통과. 다이어그램의 브라우저 시각 렌더링 검사와 별개 |
+| ADB SQL 예제 | 관리형 서비스 설정의 offline validate, mTLS 11522→1522·TLS 11521→1521·SOCKS 1080 계획 확인. SQL·wallet 시험 없음 |
+| 실제 ADB Worksheet | 기존 점프 VM → ADB 사설 IP:443 경로에서 HTTP 200·TLS 검증. 고정 포워딩+브라우저 매핑, SOCKS5+원격 DNS 두 경우 모두 실제 Chrome 로그인 화면과 리소스 15건 정상. HTTP 오류·요청 실패·JS 오류 없음. 로그인·SQL·SSO는 시험하지 않음 |
 | 다중 목적지 | sshuttle·Tailscale의 두 CIDR 명령 미리보기 확인. 실제 cloudflared로 다중 웹 설정 검사, 두 도메인의 backend 분기와 미등록 호스트 404 확인 |
 | OCI CLI 명령 계약 | 설치된 CLI의 help·JSON 샘플과 고정/동적 세션 입력 대조 |
 
@@ -38,7 +39,7 @@ sh scripts/test.sh
 terraform fmt -check -recursive terraform
 ```
 
-기본 실행에서 sshuttle 패키지나 `CLOUDFLARED_BIN`이 없으면 해당 실제 클라이언트 계약 검사는 skip으로 표시합니다. 35개 전체 검사를 재현하려면 테스트 전용 환경에 sshuttle 2.0.0을 설치하고 공식 cloudflared 실행 파일을 준비합니다. 클라이언트 설치 경로에 맞춰 아래 값을 바꿉니다.
+기본 실행에서 sshuttle 패키지나 `CLOUDFLARED_BIN`이 없으면 해당 실제 클라이언트 계약 검사는 skip으로 표시합니다. 38개 전체 검사를 재현하려면 테스트 전용 환경에 sshuttle 2.0.0을 설치하고 공식 cloudflared 실행 파일을 준비합니다. 클라이언트 설치 경로에 맞춰 아래 값을 바꿉니다.
 
 ```sh
 python3 -m venv .venv-test
@@ -69,4 +70,11 @@ terraform -chdir=terraform/bastion test
 - Cloudflare 계정·named tunnel 인증·Access의 허용/거부·DNS·외부 URL 연결.
 - ADB Private Endpoint 전환·공개 접속 차단·NSG·DNS·wallet·클라이언트별 TLS 이름 검증·SQL 조회·웹 443 접속. 다중 서버의 실제 동시 트래픽·용량·장애 영향.
 
-실제 OCI plan/apply, 세션 생성, DNS·서브넷·VNIC 변경과 Public IP 제거는 수행하지 않았습니다.
+실제 OCI plan/apply, 관리형 Bastion 세션 생성, DNS·서브넷·VNIC 변경과 Public IP 제거는 수행하지 않았습니다. Worksheet 시험에 기존 사설 테스트 ADB를 임시 기동하고 종료 후 STOPPED로 복구했습니다. 점프 VM의 설정과 데이터는 변경하지 않았고 로컬 SSH 터널도 종료했습니다.
+
+## Worksheet 실제 시험의 조건
+
+- macOS arm64, curl, OpenSSH, Playwright 1.65.1과 설치된 Chrome 157.0.8103.80의 headless 세션. TLS 오류 무시 옵션은 사용하지 않았습니다.
+- PC → 기존 점프 VM의 SSH → 기존 ADB Private Endpoint. **관리형 OCI Bastion을 시험한 것이 아닙니다.**
+- PC·다른 VCN을 주 NIC로 쓰는 VM의 DNS는 공용 IP, ADB와 같은 VCN의 점프 VM은 사설 IP 반환. 다중 NIC 추가만으로 기본 DNS·경로가 바뀌지 않는 점 확인.
+- 실제 호스트·IP·계정·키·화면 원본은 공개 저장소에 포함하지 않았습니다. [재현 절차와 도우미](guides/worksheet.md)

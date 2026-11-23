@@ -111,12 +111,14 @@ SELECT SYS_CONTEXT('USERENV', 'DB_NAME') AS DB_NAME FROM DUAL;
 
 ## 3. APEX·Database Actions: HTTPS와 원래 이름 유지
 
+SQL Worksheet는 [사설 HTTPS 페이지 접속 절차](worksheet.md)를 먼저 사용합니다. 고정 443 포워딩과 브라우저 내부의 도메인·포트 매핑으로 실제 로그인 화면을 확인한 방법입니다. 기존 점프 VM에서 검증했으며 관리형 Bastion의 실접속 검증과는 구분합니다.
+
 SQL 포트 터널을 열어도 브라우저 화면은 열리지 않습니다. 웹 도구는 443과 해당 URL을 사용합니다. ADB의 웹 도구는 여러 호스트·리다이렉트·쿠키가 관련될 수 있어, 단순한 `https://localhost:8443`보다 **원래 URL을 유지하는 경로**를 먼저 선택합니다. [Database Actions 접근](https://docs.oracle.com/en-us/iaas/autonomous-database-serverless/doc/connect-database-actions.html)
 
 | 경로 | 사용 방법 | 사전 조건 |
 |---|---|---|
 | 회사 VPN·FastConnect | PC 브라우저에서 원래 사설 HTTPS URL 열기 | 회사망→VCN 경로, 사설 DNS, 443 허용 |
-| Bastion SOCKS5 | 브라우저 프록시·원격 DNS 설정 후 원래 URL 열기 | Bastion FQDN/SOCKS5 활성화, VCN DNS 해석, 443 허용 |
+| Bastion SOCKS5 | 브라우저 프록시·원격 DNS 설정 후 원래 URL 열기 | FQDN/SOCKS5 활성화, **해당 웹 도메인이 사설 IP로 해석되는지 확인**, 443 허용 |
 | Tailscale subnet router | 사설 대역 route를 승인·수신하고 원래 URL 열기 | 별도 경유 VM, IP forwarding, 접근 정책·DNS 설정 |
 | sshuttle | 사설 대역과 필요한 DNS 중계 후 원래 URL 열기 | 경유 Linux VM의 Python·DNS·대상 접근 가능 |
 
@@ -126,7 +128,7 @@ SOCKS5 예제는 SQL 터널과 같은 설정 파일에서 실행할 수 있습�
 OCI_ACCESS_CONFIG=config/managed-services.json sh scripts/workflow.sh connect managed-socks --execute
 ```
 
-브라우저에 SOCKS5 `127.0.0.1:1080`과 프록시 DNS 조회를 설정한 뒤, OCI에서 확인한 **실제 Private Endpoint용 웹 URL**을 엽니다. [브라우저 설정·검증·복구 절차](socks5-walkthrough.md)를 따릅니다. URL을 IP·localhost로 치환하거나 `curl -k`로 인증서를 우회하지 않습니다. 프록시 DNS가 켜져 있어도 VCN에서 해당 이름을 해석하지 못하면 접속되지 않습니다.
+브라우저에 SOCKS5 `127.0.0.1:1080`과 프록시 DNS 조회를 설정한 뒤, OCI에서 확인한 **실제 Private Endpoint용 웹 URL**을 엽니다. [브라우저 설정·검증·복구 절차](socks5-walkthrough.md)를 따릅니다. URL을 IP·localhost로 치환하거나 `curl -k`로 인증서를 우회하지 않습니다. **올바른 VCN의 경유지가 웹 도메인을 ADB 사설 IP로 해석하는지 확인합니다.** 테스트에서 다른 VCN을 주 NIC로 쓰는 VM은 공용 IP를, 같은 VCN의 점프 VM은 사설 IP를 반환했습니다. 필요하면 사설 DNS 레코드·조건부 전달을 준비하거나 [고정 터널과 도메인 매핑](worksheet.md)을 사용합니다.
 
 **APEX Service와 일반 ADB에서 APEX를 사용하는 것은 구분합니다.** 별도 APEX Service에는 inbound SQL*Net 클라이언트 연결 제한이 있으므로 이 문서의 `adb-mtls` 예제를 적용할 수 없습니다. 해당 서비스의 HTTPS 기능을 사용합니다. [APEX Service 제한](https://docs.oracle.com/en-us/iaas/autonomous-database-serverless/doc/apex-workload-limitations.html)
 

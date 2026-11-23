@@ -13,6 +13,7 @@ Usage: sh scripts/workflow.sh COMMAND ...
   tailscale status|connect|accept-routes [--execute]
   tailscale advertise --cidr 10.0.1.0/24 [--execute]
   cloudflare validate|run --config FILE [--tunnel NAME] [--execute]
+  worksheet --url https://SERVICE/ords/sql-developer [--local-port 18443] [--execute]
   infra STACK init|validate|plan|show|apply
 Network commands preview by default. Set OCI_ACCESS_CONFIG for an alternate access JSON.
 USAGE
@@ -32,6 +33,9 @@ case "$command_name" in
     ;;
   infra)
     exec bash "$ROOT/scripts/infra.sh" "$@"
+    ;;
+  worksheet)
+    exec "$PYTHON_BIN" "$ROOT/scripts/worksheet.py" "$@"
     ;;
   *) echo "Unknown command: $command_name" >&2; exit 2 ;;
 esac
