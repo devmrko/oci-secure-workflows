@@ -24,6 +24,7 @@ class NetworkTests(unittest.TestCase):
         for args in (["tailscale", "status"], ["tailscale", "connect"], ["tailscale", "accept-routes"],
                      ["tailscale", "advertise", "--cidr", "10.0.1.0/24"],
                      ["cloudflare", "run", "--config", "missing.yml", "--tunnel", "dev-app"],
+                     ["cloudflare", "run", "--token-file", "missing.token", "--protocol", "http2"],
                      ["cloudflare", "validate", "--config", "missing.yml"]):
             with self.quiet():
                 self.assertEqual(network.main(args, runner=runner), 0)
@@ -53,6 +54,38 @@ class NetworkTests(unittest.TestCase):
         for name in ("--token", "app;id", "$(id)", "app/name"):
             with self.assertRaises(ValueError), self.quiet():
                 network.main(["cloudflare", "run", "--config", "file.yml", "--tunnel=" + name])
+        runner.assert_not_called()
+
+    def test_remote_tunnel_keeps_token_out_of_arguments_and_output(self):
+        with tempfile.TemporaryDirectory(prefix="remote tunnel ") as temp:
+            token = Path(temp) / "connector token"
+            token.write_text("test-only-secret-value")
+            token.chmod(0o600)
+            runner = Mock(return_value=0)
+            output = io.StringIO()
+            with patch.object(network.shutil, "which", return_value="/fake/cloudflared"), contextlib.redirect_stdout(output):
+                self.assertEqual(network.main(["cloudflare", "run", "--token-file", str(token),
+                                               "--protocol", "http2", "--execute"], runner), 0)
+            runner.assert_called_once_with(["cloudflared", "tunnel", "--no-autoupdate", "--protocol", "http2",
+                                            "run", "--token-file", str(token.resolve())])
+            self.assertNotIn("test-only-secret-value", output.getvalue())
+
+    def test_remote_tunnel_rejects_mixed_modes_and_missing_or_exposed_token(self):
+        for args in (["cloudflare", "validate", "--token-file", "file"],
+                     ["cloudflare", "run", "--token-file", "file", "--tunnel", "app"],
+                     ["cloudflare", "validate", "--config", "file", "--protocol", "http2"]):
+            with self.assertRaises(ValueError), self.quiet():network.main(args)
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            network.main(["cloudflare", "run", "--config", "a", "--token-file", "b"])
+        runner = Mock(side_effect=AssertionError("must not run"))
+        with tempfile.TemporaryDirectory() as temp:
+            token = Path(temp) / "token"
+            for present in (False, True):
+                if present:
+                    token.write_text("test-only-secret")
+                    token.chmod(0o644)
+                with patch.object(network.shutil, "which", return_value="/fake/cloudflared"), self.quiet(), self.assertRaises(ValueError):
+                    network.main(["cloudflare", "run", "--token-file", str(token), "--execute"], runner)
         runner.assert_not_called()
 
     def test_shell_entrypoint_previews_and_real_subprocess_wiring(self):

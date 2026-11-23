@@ -128,7 +128,7 @@ OCI_ACCESS_CONFIG=config/access.example.json sh scripts/workflow.sh plan dev-web
 | Bastion 고정 포워딩·SOCKS5 | PC에 OCI CLI 인증·SSH 키, OCI에 Bastion·접속 허용 CIDR·대상 방화벽 |
 | sshuttle | PC에 sshuttle·로컬 방화벽 권한, Bastion 뒤 Linux VM에 Python 3.10 이상, VM에서 목적지 접근 |
 | Tailscale | PC와 서버 또는 subnet router에 클라이언트·조직 로그인, 경로 승인·접근 정책 |
-| Cloudflare | 웹앱에 도달하는 서버에 cloudflared·로컬 named tunnel 설정·credentials, 계정·도메인·Access 정책 |
+| Cloudflare | 웹앱에 도달하는 서버에 cloudflared, Dashboard 토큰 파일 또는 로컬 설정·credentials, 계정·도메인·Access 정책 |
 | LB·API Gateway·NAT | Terraform 1.7 이상, OCI 프로파일·권한·기존 네트워크, 방법별 인증서·인증·라우팅 설정 |
 
 예제와 도우미가 모든 인프라·계정·서비스 설치를 끝내 주는 것은 아닙니다. 외부 서비스의 사용 가능 여부와 요금도 확인합니다. 준비 항목과 설치 안내는 [방법별 쉬운 실행](docs/guides/easy-workflows.md)에 있습니다.
@@ -169,12 +169,39 @@ sh scripts/workflow.sh cloudflare validate --config config/cloudflared.example.y
 - [SOCKS5 브라우저 따라하기](docs/guides/socks5-walkthrough.md): 중계 주소·DNS·원래 브라우저 설정으로 복구.
 - [sshuttle 실행](docs/guides/easy-workflows.md#sshuttle): 두 터미널 순서, 사설 대역·DNS 범위와 방화벽 권한.
 - [Tailscale 실행](docs/guides/easy-workflows.md#tailscale): 서버 직접 등록과 subnet router의 차이, 광고·승인·접근 정책.
-- [Cloudflare 실행](docs/guides/easy-workflows.md#cloudflare-tunnel): named tunnel 준비, Access 인증과 DNS, 설정 검증·연결.
+- [Cloudflare 실행·검증](docs/guides/cloudflare.md): Dashboard 토큰 파일 실행, Access 로그인·익명 차단, 로컬 관리 방식과 구분.
 - [기존 회사망 연결](docs/guides/alternatives.md#회사망-연결-요청에-필요한-정보): 회사 VPN에서 대상 VCN까지 도달하는지 확인.
 
 `--execute` 없는 `connect`, `sshuttle`, `tailscale`, `cloudflare`는 외부 클라이언트를 실행하지 않습니다. 반면 `infra`의 init·validate·plan·show는 즉시 해당 Terraform 명령을 실행하며, apply는 저장된 계획과 스택 이름 확인 후 적용합니다.
 
 ## 여러 사용자용 웹과 서버 외부 통신
+
+### Cloudflare Tunnel·Access 시험
+
+| 준비물 | 확인 사항 |
+|---|---|
+| Cloudflare 계정·관리 도메인 | 기존 서비스와 겹치지 않는 테스트 하위 도메인 |
+| Zero Trust·Access | 허용 사용자·로그인 방법 설정. **Free 가입도 카드 등록·한도 초과 과금 동의를 요구할 수 있으므로 가입 화면 확인** |
+| 웹 서버와 cloudflared | cloudflared에서 backend 접근 가능. 첫 시험에는 업무 데이터가 없는 가상 응답 사용 |
+| 외부 통신 | 사설 VM은 NAT 출구 사용 가능, VM Public IP·해당 서브넷의 IGW 경로 불필요. DNS와 TCP 7844(HTTP/2) 또는 UDP 7844(QUIC), 관리용 HTTPS 허용 |
+| Dashboard 관리 터널 토큰 | 저장소 밖 파일에 보관, `chmod 600`. 토큰 값을 명령에 직접 넣지 않음 |
+
+Dashboard에서 테스트 앱·허용 정책·DNS·터널을 준비하고 웹 서버를 실행한 뒤 다음 명령을 사용합니다. cloudflared 2026.11.1에서 확인했습니다.
+
+```sh
+chmod 600 "$HOME/.cloudflared/oci-demo.token"
+# 미리보기 후 --execute를 추가해 실제 실행
+sh scripts/workflow.sh cloudflare run \
+  --token-file "$HOME/.cloudflared/oci-demo.token" --protocol http2
+sh scripts/workflow.sh cloudflare run \
+  --token-file "$HOME/.cloudflared/oci-demo.token" --protocol http2 --execute
+```
+
+**확인:** 익명 요청은 Access 로그인으로 이동하고, 허용 사용자는 로그인 후 원본 응답을 받아야 합니다. 위조 쿠키도 원본에 접근하지 못해야 합니다. **종료:** `Ctrl+C`로 커넥터·가상 웹을 종료하고 전용 앱·정책·터널·DNS·임시 토큰을 정리합니다. 시험에서는 이 셸 도우미와 실제 로그인을 확인했으며 **OCI NAT Gateway에 배치한 connector는 별도 검증 대상**입니다.
+
+[가상 웹 준비 → Dashboard 구성 → 로그인·차단 시험 → 정리 전체 절차](docs/guides/cloudflare.md)
+
+### OCI 웹·API 입구와 NAT
 
 웹서비스의 공개 입구는 LB, API 요청 정책은 API Gateway, 서버 아웃바운드는 NAT 예제를 사용합니다. 필요한 것만 각각 선택하며 모두 설치할 필요는 없습니다. 각 Terraform 스택은 별도 state를 사용하고 기존 Compute의 Public IP나 기존 서브넷 경로를 자동 변경하지 않습니다.
 
@@ -193,10 +220,10 @@ plan은 OCI를 조회하고 로컬 계획을 만들지만 자원을 생성하지
 
 | 범위 | 확인한 내용 | 추가 환경 검증 |
 |---|---|---|
-| 셸·Python 도우미 | 38개 테스트 통과, 미리보기·인자 전달·실패 처리·패키지 제외 규칙 | 환경별 계정·키·네트워크 연결 |
+| 셸·Python 도우미 | 40개 테스트 통과, 미리보기·인자 전달·실패 처리·패키지 제외 규칙 | 환경별 계정·키·네트워크 연결 |
 | ADB Worksheet | 기존 점프 VM의 고정 터널·SOCKS5 두 경로에서 실제 로그인 화면·TLS·리소스 로딩 확인 | 관리형 Bastion·VPN 경유, 로그인·SQL·SSO |
 | sshuttle·OpenSSH | 실제 sshuttle 옵션 파서와 `ssh -G` 구성 해석 | sudo 방화벽 변경·원격 Python·사설 트래픽 |
-| Cloudflare | 공식 cloudflared로 예제 ingress·호스트 매칭·404 규칙 검사 | 실제 터널·DNS·Access 허용과 거부 |
+| Cloudflare | 실제 named tunnel·Access 로그인 후 원본 응답, 익명·위조 쿠키 차단, 로컬 ingress 검사 | OCI NAT 경유·다른 사용자·IdP·성능. [실행·검증](docs/guides/cloudflare.md) |
 | Tailscale | 대체 실행 파일로 셸 호출과 전달 인자 검사 | 실제 로그인·경로·접근 정책 |
 | Terraform | 네 스택 validate와 8개 mock plan 테스트 통과 | 실제 plan/apply·서비스 동작·정책 finding 해소 |
 
@@ -204,7 +231,7 @@ plan은 OCI를 조회하고 로컬 계획을 만들지만 자원을 생성하지
 sh scripts/test.sh
 ```
 
-실제 클라이언트 도구가 없는 기본 테스트에서는 해당 옵션 검사가 skip될 수 있습니다. 38개 전체 검사와 실제 Worksheet 접속의 범위·버전은 [검증 결과](docs/validation.md)에 있습니다. 한 경로의 성공이 다른 서비스·테넌시의 운영 검증을 대신하지는 않습니다.
+실제 클라이언트 도구가 없는 기본 테스트에서는 해당 옵션 검사가 skip될 수 있습니다. 40개 전체 검사와 실제 Worksheet·Cloudflare 접속의 범위·버전은 [검증 결과](docs/validation.md)에 있습니다. 한 경로의 성공이 다른 서비스·테넌시의 운영 검증을 대신하지는 않습니다.
 
 ## 상세 문서와 배포 파일
 

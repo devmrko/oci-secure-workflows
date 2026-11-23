@@ -46,16 +46,29 @@ def make_plan(args):
         if args.action != "advertise" and args.cidrs:
             raise ValueError("--cidr is only supported with tailscale advertise")
     else:
-        config = str(Path(args.config).expanduser().resolve())
-        command = ["cloudflared", "tunnel", "--config", config]
-        if args.action == "validate":
-            command += ["ingress", "validate"]
+        if args.token_file:
+            if args.action != "run" or args.tunnel:
+                raise ValueError("--token-file is for remotely managed run only; omit --tunnel")
+            command = ["cloudflared", "tunnel", "--no-autoupdate"]
+            if args.protocol:
+                command += ["--protocol", args.protocol]
+            command += ["run", "--token-file", str(Path(args.token_file).expanduser().resolve())]
+            notes.append("Uses a remotely managed tunnel. Token contents are never read or printed by this helper.")
         else:
-            if not args.tunnel or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", args.tunnel):
-                raise ValueError("cloudflare run requires a tunnel name or UUID using letters, digits, _ or -")
-            command += ["run", args.tunnel]
-        notes += ["Uses a locally managed named tunnel and local credentials file; no token argument is accepted.",
-                  "Create Access policy and DNS mapping separately before exposing an application."]
+            config = str(Path(args.config).expanduser().resolve())
+            command = ["cloudflared", "tunnel", "--config", config]
+            if args.action == "validate":
+                if args.protocol:
+                    raise ValueError("--protocol is for run only")
+                command += ["ingress", "validate"]
+            else:
+                if not args.tunnel or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", args.tunnel):
+                    raise ValueError("cloudflare run requires a tunnel name or UUID using letters, digits, _ or -")
+                if args.protocol:
+                    command += ["--protocol", args.protocol]
+                command += ["run", args.tunnel]
+            notes.append("Uses a locally managed named tunnel and local credentials file.")
+        notes.append("Create Access policy and DNS mapping separately before exposing an application.")
     return {"command": command, "prerequisite_command": prerequisite, "notes": notes}
 
 
@@ -72,8 +85,11 @@ def parser():
     ts.add_argument("--cidr", dest="cidrs", action="append")
     cf = sub.add_parser("cloudflare")
     cf.add_argument("action", choices=("validate", "run"))
-    cf.add_argument("--config", required=True)
+    source = cf.add_mutually_exclusive_group(required=True)
+    source.add_argument("--config")
+    source.add_argument("--token-file")
     cf.add_argument("--tunnel")
+    cf.add_argument("--protocol", choices=("auto", "quic", "http2"))
     for child in (ssh, ts, cf):
         child.add_argument("--execute", action="store_true")
         child.add_argument("--json", action="store_true", help="preview only, machine-readable command")
@@ -99,8 +115,12 @@ def main(argv=None, runner=subprocess.call):
         return 0
     if not shutil.which(plan["command"][0]):
         raise ValueError(f'missing executable: {plan["command"][0]}; install it separately')
-    if args.method == "cloudflare" and not Path(args.config).expanduser().is_file():
-        raise ValueError("Cloudflare config file does not exist")
+    if args.method == "cloudflare":
+        source = Path(args.token_file or args.config).expanduser()
+        if not source.is_file():
+            raise ValueError("Cloudflare input file does not exist")
+        if args.token_file and sys.platform != "win32" and source.stat().st_mode & 0o077:
+            raise ValueError("token file must be owner-only; use chmod 600 on the token file")
     return runner(plan["command"])
 
 

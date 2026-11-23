@@ -178,9 +178,11 @@ tailscale status
 
 사용자가 브라우저 로그인 후 웹 URL로 접속하도록 할 때 선택합니다. 서버의 `cloudflared`가 외부로 연결하고 Cloudflare Access가 사용자 인증을 담당합니다. OCI 서버에는 필요한 외부 통신 경로가 있어야 합니다.
 
-이 도우미는 **로컬 관리 named tunnel**용입니다. Dashboard에서 토큰으로 관리하는 remote tunnel과 설정 방식을 섞지 않습니다. 계정에 도메인을 연결하고 cloudflared를 설치한 뒤 [로컬 터널 생성 절차](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/create-local-tunnel/)에 따라 준비합니다. 이미 같은 터널이 있으면 새로 만들지 않고 기존 UUID와 credentials를 사용합니다.
+**실제 Access 접속까지 확인한 Dashboard 관리 모드**는 [Cloudflare 실행·검증 절차](cloudflare.md)를 따릅니다. `cloudflare run --token-file FILE --protocol http2`로 미리 보고 `--execute`로 실행합니다. 토큰 파일은 저장소 밖에 두며 `chmod 600`이 필요합니다. Free 가입 시 결제수단·초과 과금 조건도 확인합니다.
 
-아래는 **실제 계정 인증과 터널 생성 명령**입니다. 본 도구의 미리보기와 달리 즉시 공식 CLI를 실행합니다. 이 저장소의 테스트에서는 실행하지 않았습니다.
+아래는 별도인 **로컬 관리 named tunnel** 구성입니다. Dashboard 관리의 `--token-file`과 로컬 관리의 `--config`를 섞지 않습니다. 계정에 도메인을 연결하고 cloudflared를 설치한 뒤 [로컬 터널 생성 절차](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/create-local-tunnel/)에 따라 준비합니다. 이미 같은 터널이 있으면 새로 만들지 않고 기존 UUID와 credentials를 사용합니다.
+
+아래는 **실제 계정 인증과 로컬 관리 터널 생성 명령**입니다. 즉시 공식 CLI를 실행합니다. 이번 실제 시험에서는 이 로컬 생성 방식 대신 Dashboard 관리 모드를 사용했습니다.
 
 ```sh
 cloudflared tunnel login

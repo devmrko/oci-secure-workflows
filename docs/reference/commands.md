@@ -47,6 +47,7 @@
 | `tailscale accept-routes` | `tailscale set --accept-routes` | 클라이언트 경로 수신 변경 안내 |
 | `cloudflare validate --config FILE` | 로컬 named tunnel의 ingress 검증 | 검증 명령 출력 |
 | `cloudflare run --config FILE --tunnel NAME` | 로컬 설정으로 named tunnel 실행 | 실행 명령 출력 |
+| `cloudflare run --token-file FILE [--protocol http2]` | Dashboard 관리 터널 실행. 토큰 파일은 소유자만 읽기·쓰기 | 파일 내용을 읽거나 외부 도구를 실행하지 않고 명령만 출력 |
 
 `--cidr`는 반복할 수 있고 RFC1918 IPv4 범위만 허용합니다. 기본 경로·공개 IP·IPv6·비정규 CIDR은 거부합니다. `--dns`는 sshuttle에서만 지원하고 기본 꺼짐입니다. Cloudflare의 설정에는 `config/cloudflared.example.yml`을 사용할 수 있으며 실제 `.yml`과 credentials JSON은 Git·ZIP에서 제외합니다. 로그인·경로 승인·DNS·접근 정책 구성은 [사용 절차](../guides/easy-workflows.md)에 있습니다.
 

@@ -13,6 +13,7 @@ Usage: sh scripts/workflow.sh COMMAND ...
   tailscale status|connect|accept-routes [--execute]
   tailscale advertise --cidr 10.0.1.0/24 [--execute]
   cloudflare validate|run --config FILE [--tunnel NAME] [--execute]
+  cloudflare run --token-file FILE [--protocol auto|quic|http2] [--execute]
   worksheet --url https://SERVICE/ords/sql-developer [--local-port 18443] [--execute]
   infra STACK init|validate|plan|show|apply
 Network commands preview by default. Set OCI_ACCESS_CONFIG for an alternate access JSON.
